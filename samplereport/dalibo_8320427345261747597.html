@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostgreSQL Query Plan Viewer - Dalibo</title>
+<script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/pev2/dist/pev2.umd.js"></script>
+<link href="https://unpkg.com/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/pev2/dist/style.css"/>
+</head>
+<body>
+<div id="app" class="container-fluid mt-auto">
+<pev2 :plan-source="plan" :plan-query="query" />
+</div>
+
+<script>
+const { createApp } = Vue;
+const app = createApp({
+data() {
+return {
+query:`-- Common Table Expression to filter data from tenk1
+WITH filtered_tenk1 AS (
+    SELECT 
+        unique1, unique2, hundred, thousand, stringu1, odd, even
+    FROM 
+        tenk1
+    WHERE 
+        hundred < 50
+        AND odd IS NOT NULL
+),
+filtered_tenk2 AS (
+    SELECT 
+        unique1, unique2, fivethous, tenthous, stringu2, two, ten
+    FROM 
+        tenk2
+    WHERE 
+        fivethous > 5000
+        AND stringu2 LIKE 'A%'
+)
+SELECT 
+    t1.unique1 AS t1_unique1, 
+    t1.unique2 AS t1_unique2, 
+    t2.unique1 AS t2_unique1, 
+    t2.unique2 AS t2_unique2,
+    t1.stringu1 AS t1_stringu1, 
+    t2.stringu2 AS t2_stringu2,
+    t1.hundred, 
+    t2.fivethous,
+    COALESCE(t1.odd, t2.two) AS combined_value,
+    CASE
+        WHEN t1.even IS NOT NULL AND t2.two IS NOT NULL THEN 'Match Found'
+        ELSE 'No Match'
+    END AS match_status
+FROM 
+    filtered_tenk1 t1
+LEFT JOIN 
+    filtered_tenk2 t2 
+ON 
+    t1.unique2 = t2.unique2
+FULL OUTER JOIN 
+    tenk1 t3
+ON 
+    t1.unique1 = t3.unique1
+INNER JOIN 
+    tenk2 t4
+ON 
+    t2.unique1 = t4.unique1
+WHERE 
+    t1.thousand BETWEEN 100 AND 1000
+    AND (t2.ten > 10 OR t3.even % 2 = 0)
+    AND t4.hundred IS NOT NULL
+ORDER BY 
+    t1.unique1, t2.unique2;
+`,
+plan:`
+Sort  (cost=512.30..512.30 rows=1 width=188) (actual time=5.057..5.059 rows=0 loops=1)
+  Output: tenk1.unique1, tenk1.unique2, tenk2.unique1, tenk2.unique2, tenk1.stringu1, tenk2.stringu2, tenk1.hundred, tenk2.fivethous, (COALESCE(tenk1.odd, tenk2.two)), (CASE WHEN ((tenk1.even IS NOT NULL) AND (tenk2.two IS NOT NULL)) THEN 'Match Found'::text ELSE 'No Match'::text END)
+  Sort Key: tenk1.unique1, tenk1.unique2
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=348
+  ->  Nested Loop  (cost=0.86..512.29 rows=1 width=188) (actual time=5.038..5.039 rows=0 loops=1)
+        Output: tenk1.unique1, tenk1.unique2, tenk2.unique1, tenk2.unique2, tenk1.stringu1, tenk2.stringu2, tenk1.hundred, tenk2.fivethous, COALESCE(tenk1.odd, tenk2.two), CASE WHEN ((tenk1.even IS NOT NULL) AND (tenk2.two IS NOT NULL)) THEN 'Match Found'::text ELSE 'No Match'::text END
+        Buffers: shared hit=345
+        ->  Nested Loop Left Join  (cost=0.57..503.98 rows=1 width=164) (actual time=5.037..5.039 rows=0 loops=1)
+              Output: tenk1.unique1, tenk1.unique2, tenk1.stringu1, tenk1.hundred, tenk1.odd, tenk1.even, tenk2.unique1, tenk2.unique2, tenk2.stringu2, tenk2.fivethous, tenk2.two
+              Filter: ((tenk2.ten > 10) OR ((t3.even % 2) = 0))
+              Buffers: shared hit=345
+              ->  Nested Loop  (cost=0.29..503.32 rows=1 width=168) (actual time=5.036..5.038 rows=0 loops=1)
+                    Output: tenk1.unique1, tenk1.unique2, tenk1.stringu1, tenk1.hundred, tenk1.odd, tenk1.even, tenk2.unique1, tenk2.unique2, tenk2.stringu2, tenk2.fivethous, tenk2.two, tenk2.ten
+                    Buffers: shared hit=345
+                    ->  Seq Scan on public.tenk2  (cost=0.00..495.00 rows=1 width=84) (actual time=5.035..5.036 rows=0 loops=1)
+                          Output: tenk2.unique1, tenk2.unique2, tenk2.two, tenk2.four, tenk2.ten, tenk2.twenty, tenk2.hundred, tenk2.thousand, tenk2.twothousand, tenk2.fivethous, tenk2.tenthous, tenk2.odd, tenk2.even, tenk2.stringu1, tenk2.stringu2, tenk2.string4
+                          Filter: ((tenk2.fivethous > 5000) AND (tenk2.stringu2 ~~ 'A%'::text))
+                          Rows Removed by Filter: 10000
+                          Buffers: shared hit=345
+                    ->  Index Scan using tenk1_unique2 on public.tenk1  (cost=0.29..8.31 rows=1 width=84) (never executed)
+                          Output: tenk1.unique1, tenk1.unique2, tenk1.two, tenk1.four, tenk1.ten, tenk1.twenty, tenk1.hundred, tenk1.thousand, tenk1.twothousand, tenk1.fivethous, tenk1.tenthous, tenk1.odd, tenk1.even, tenk1.stringu1, tenk1.stringu2, tenk1.string4
+                          Index Cond: (tenk1.unique2 = tenk2.unique2)
+                          Filter: ((tenk1.odd IS NOT NULL) AND (tenk1.hundred < 50) AND (tenk1.thousand >= 100) AND (tenk1.thousand <= 1000))
+              ->  Index Scan using tenk1_unique1 on public.tenk1 t3  (cost=0.29..0.64 rows=1 width=8) (never executed)
+                    Output: t3.unique1, t3.unique2, t3.two, t3.four, t3.ten, t3.twenty, t3.hundred, t3.thousand, t3.twothousand, t3.fivethous, t3.tenthous, t3.odd, t3.even, t3.stringu1, t3.stringu2, t3.string4
+                    Index Cond: (t3.unique1 = tenk1.unique1)
+        ->  Index Scan using tenk2_unique1 on public.tenk2 t4  (cost=0.29..8.30 rows=1 width=4) (never executed)
+              Output: t4.unique1, t4.unique2, t4.two, t4.four, t4.ten, t4.twenty, t4.hundred, t4.thousand, t4.twothousand, t4.fivethous, t4.tenthous, t4.odd, t4.even, t4.stringu1, t4.stringu2, t4.string4
+              Index Cond: (t4.unique1 = tenk2.unique1)
+              Filter: (t4.hundred IS NOT NULL)
+Query Identifier: -8320427345261747597
+Planning:
+  Buffers: shared hit=230 dirtied=3
+Planning Time: 4.483 ms
+Execution Time: 5.137 ms`
+}
+},
+});
+app.component("pev2", pev2.Plan);
+app.mount("#app");
+</script>
+</body>
+</html>
