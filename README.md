@@ -1,8 +1,8 @@
 # statsviaexplainanalyze - Simplifying PostgreSQL Execution Plan Analysis.
 
-Analyzing execution plans is made easier with curating statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members and reduces the need for additional information requests.
+Analyzing execution plans is made easier with curating execution plan, statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members or external forum and reduces the need for additional information requests.
 
-This tool automates the curation of object statistics when analyzing problematic execution plans in PostgreSQL using an HTML template and the `psql` command line.
+This tool automates the curation of object statistics when analyzing problematic execution plans in PostgreSQL using an HTML template embded in sql file and the `psql` command line.
 
 ## How it Works?
 Execution plan is generated either by `Explain Analyze Buffers` or only with `Explain` and stored in a plantable.
