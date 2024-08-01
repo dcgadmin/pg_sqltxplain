@@ -14,6 +14,8 @@ from testplanstats;
 
 vacuum analyze testplanstats;
 
+set work_mem to '1MB';
+
 SELECT PLANSTATS.RUN_PLAN_ANALYZE
 	($$select *
 		FROM testplanstats
