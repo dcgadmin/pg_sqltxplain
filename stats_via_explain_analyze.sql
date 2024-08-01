@@ -189,11 +189,13 @@ cols."NULL?"      as "Nullable",
 cols."Null%"      as "Null Fraction",
 cols."Distnct"    as "Distinct",
 cols."Cluster"    as "Correlation",
-cols."MCV"        as "Most Common Values(5)",
-cols."MVF"        as "Most Common Frequency(5)",
+cols."Selectivity" as "Selectivity",
 cols."Store"      as "Storage Type",
 cols."Cmprssn"    as "Compression",
-cols."StatTarget" as "Statistics Target" from filters, planstats.VW_COLUMN_STATS cols , tblname
+cols."StatTarget" as "Statistics Target",
+cols."MCV"        as "Most Common Val(5)",
+cols."MVF"        as "Most Common Freq(5)" 
+from filters, planstats.VW_COLUMN_STATS cols , tblname
 where cols."SName" = tblname.schname and cols."TName" = tblname.objname
 and  filters.objname ~* cols."CName";
 
@@ -353,8 +355,9 @@ ORDER BY 1;
 \qecho <br>
 
 \qecho <footer>
-\qecho   HTML template based on psql, created by DataCloudGaze Consulting<br>
-\qecho   <a href="mailto:contact@datacloudgaze.com">contact@datacloudgaze.com</a>
+\qecho  Created by DataCloudGaze Consulting<br>
+\qecho   <a href="mailto:contact@datacloudgaze.com">Report Issue - contact@datacloudgaze.com</a><br>
+\qecho   <a href="https://www.datacloudgaze.com/">About Us</a>
 \qecho </footer>
 \qecho <h1 style="font-family:verdana"align="center"><u>End Report </u></h1>
 \echo Underlying Statistics curated for Query(:queryid) - Output File :htmlfile 

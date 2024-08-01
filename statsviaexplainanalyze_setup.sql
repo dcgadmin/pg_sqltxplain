@@ -175,6 +175,10 @@ CREATE VIEW planstats.vw_column_stats AS
     round((pg_stats.null_frac)::numeric, 2) AS "Null%",
     pg_stats.n_distinct AS "Distnct",
     round((pg_stats.correlation)::numeric, 3) AS "Cluster",
+       ROUND(CASE
+        WHEN pg_stats.n_distinct > 0 THEN ((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac))/n_distinct
+        ELSE ((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac))/(abs(n_distinct)*((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac)))
+    END::numeric,2) AS "Selectivity",
     (((pg_stats.most_common_vals)::text)::text[])[1:5] AS "MCV",
     (((pg_stats.most_common_freqs)::text)::text[])[1:5] AS "MVF",
         CASE a.attstorage
@@ -201,8 +205,6 @@ CREATE VIEW planstats.vw_column_stats AS
      LEFT JOIN pg_stats ON (((a.attrelid = (((((pg_stats.schemaname)::text || '.'::text) || (pg_stats.tablename)::text))::regclass)::oid) AND (a.attname = pg_stats.attname))))
   WHERE ((a.attnum > 0) AND (NOT a.attisdropped));
 
-
-
 CREATE VIEW planstats.vw_index_stats AS
  SELECT schemaname AS "Sname",
     relname,
@@ -216,9 +218,6 @@ CREATE VIEW planstats.vw_index_stats AS
            FROM pg_indexes idx
           WHERE ((idx.schemaname = pg_stat_user_indexes.schemaname) AND (idx.tablename = pg_stat_user_indexes.relname) AND (idx.indexname = pg_stat_user_indexes.indexrelname))) AS "Details"
    FROM pg_stat_user_indexes;
-
-
-
 
 CREATE VIEW planstats.vw_table_stats AS
  WITH constants AS (
