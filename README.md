@@ -1,4 +1,4 @@
-# statsviaexplainanalyze
+# statsviaexplainanalyze - Simplifying Execution Plan Analysis.
 
 Analyzing execution plans is made easier with curating statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members and reduces the need for additional information requests.
 
