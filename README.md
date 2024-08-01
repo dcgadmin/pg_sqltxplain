@@ -98,10 +98,10 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 ```
 ## Sample Report 
 Check out sample html report created using using statsviaexplainanalyze.
-[Base Report - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html) and [PEV2 Integrated Report - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html).
+[Base Report 1- StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_7740365855379636009.html), [Base Report 2- StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html) and [PEV2 Integrated Report - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_8320427345261747597.html).
 
 ## Contact Details.
-Feel free to mail us(`contact@datacloudgaze.com`) for any issues or any consulting on PosgreSQL performance Tuning.
+Feel free to mail us(`contact@datacloudgaze.com`) for any issues or consulting on PostgreSQL performance Tuning.
 
 [www.datacloudgaze.com](www.datacloudgaze.com)
 

@@ -37,7 +37,7 @@ select 'dalibo' || '_' || abs((:'queryid')::bigint) || '.html' as dalibofile
 \qecho <head>
 \qecho   <meta charset="UTF-8">
 \qecho   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-\qecho   <title>PostgreSQL Query Plan Viewer</title>
+\qecho   <title>PostgreSQL-StatsViaExplainAnalyze</title>
 \qecho  <style type='text/css'> body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} footer {text-align: right;font-size: smaller;}</style>
 \qecho </head>
 \qecho <body>
