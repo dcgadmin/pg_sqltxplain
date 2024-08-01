@@ -102,6 +102,7 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 Check out sample html report created using  statsviaexplainanalyze utility.
 1. [Sample 1 - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_7740365855379636009.html)
 2. [Sample 2 - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html)
+3. [Sample 3 - StatsViaExplainAnalyzeDalibo](https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
 
 ## Contact Details.
 Feel free to mail us(`contact@datacloudgaze.com`) for any issues or consulting on PostgreSQL performance Tuning.
