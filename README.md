@@ -10,7 +10,7 @@ Problematic SQL is run within `EXPLAIN ANALYZE BUFFERS` within wrapper function 
 Using the `psql` command line, the current statistics of all database objects are fetched and included in the HTML output. The HTML output can also be integrated with the [PEV2 visualiser](https://github.com/dalibo/pev2).
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/54bd8058-ed83-495b-95b5-ed3836f0935e" alt="Screen Recording" width="550" height="250"/>
+  <img src="https://github.com/user-attachments/assets/6ab56914-2158-44eb-b663-062b861e153b" alt="Screen Recording" width="600" height="450"/>
 </div>
 
 ## Installation 
