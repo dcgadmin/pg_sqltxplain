@@ -96,6 +96,12 @@ Internally it use two sql file to generate couple of html report as we are using
 ```
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
 ```
+## Sample Report 
+Check out sample html report created using using statsviaexplainanalyze.
+[Base Report - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html) and [PEV2 Integrated Report - StatsViaExplainAnalyze](https://htmlpreview.github.io/?https://github.com/dcgadmin/statsviaexplainanalyze/blob/main/samplereport/Stats_Via_Explain_Analyze_1545576602608240663.html).
 
+## Contact Details for further details
+Feel free to mail us for any issues or any consulting on SQL performance Tuning.
+contact@datacloudgaze.com
 
 
