@@ -91,7 +91,7 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 Integrate Execution plan objects statistics with [PEV2 visualiser](https://github.com/dalibo/pev2) a graphical vizualization of a PostgreSQL execution plan.
 
 With any of the options mentioned previously, we can choose to get underlying stats of Objects and integrate it with PEV2. 
-Internally it use two sql file to generate couple of html report as we are iframe html tag to take care of different stylesheet.
+Internally it use two sql file to generate couple of html report as we are using iframe html tag to take care of different stylesheet.
 
 ```
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
