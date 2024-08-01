@@ -28,9 +28,14 @@ SELECT PLANSTATS.RUN_PLAN_ANALYZE
 --Running base statsviaexplainanalyze report
 PGPASSWORD=******* psql -h localhost -U postgres -d plantest -q -v ON_ERROR_STOP=1 -f stats_via_explain_analyze.sql
 
-  
 --Running Dalibo Integrated statsviaexplainanalyse report.
 PGPASSWORD=******* psql -h localhost -U postgres -d plantest -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
+
+--Running base statsviaexplainanalyze report using query_id filter
+PGPASSWORD=******* psql -h localhost -U postgres -d plantest -q -v ON_ERROR_STOP=1 -v query_id=7740365855379636009 -f stats_via_explain_analyze.sql
+
+--Running Dalibo Integrated statsviaexplainanalyse report using query_id filter
+PGPASSWORD=******* psql -h localhost -U postgres -d plantest -q -v ON_ERROR_STOP=1 -v query_id=7740365855379636009 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
 
 SELECT PLANSTATS.RUN_PLAN_EXPLAIN
 	($$select *
