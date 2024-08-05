@@ -74,7 +74,7 @@ select 'dalibo' || '_' || abs((:'queryid')::bigint) || '.html' as dalibofile
 \qecho <p id="Overview" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Overview</h2>
 \qecho <h4 style="font-family:verdana;list-style-type:none">
-\qecho  <li>Stats via EXPLAIN ANALYZE script gather stats for all database objects involved in the execution plan for a query.</li>
+\qecho  <li>pg_sqltxplain script gather stats for all database objects involved in the execution plan for a query.</li>
 \qecho </h4>
 \pset tuples_only on
 select 'Report Creation Time : <b>' || date_trunc('second', clock_timestamp()::timestamp) || '</b>';
