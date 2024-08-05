@@ -32,7 +32,7 @@ select 'pg_sqltxplain' || '_' || abs((:'queryid')::bigint) || '.html' as htmlfil
 \qecho <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 \qecho <meta name="generator" content="PSQL">
 \qecho  <title>PostgreSQL-pg_sqltxplain</title>
-\qecho  <style type='text/css'> body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} footer {text-align: right;font-size: smaller;}</style>
+\qecho  <style type='text/css'> .tooltip-container{position:relative;display:inline;cursor:pointer}.tooltip-content{visibility:hidden;position:absolute;left:100%;top:50%;transform:translateY(-50%);background-color:#f9f9f9;border:1px solid #ddd;padding:10px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .3s,visibility .3s;z-index:1000}.tooltip-container:hover .tooltip-content{visibility:visible;opacity:1}.tooltip-table{border-collapse:collapse;font-size:.9em}.tooltip-table th,.tooltip-table td{border:1px solid #ddd;padding:4px 8px;text-align:left}.tooltip-table th{background-color:#f2f2f2;font-weight:700} .body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} footer {text-align: right;font-size: smaller;}</style>
 \qecho </head>
 \qecho <h1 style="font-family:verdana"align="center">pg_sqltxplain Report - QueryID = :queryid</h1>
 \qecho <div class="table-content">	
@@ -84,11 +84,69 @@ select 'Report Creation Time : <b>' || date_trunc('second', clock_timestamp()::t
 \qecho <br>
 \qecho <h2 style="font-family:verdana">SQL</h2>
 \qecho <br>
+\qecho <p id="ExecutionPlanDetailsAnchor" class="anchor"></p>
 select concat_ws('','<pre>',sql,'</pre>')  as "SQLTEXT" from plan_table where planid = :planid;
 \qecho <br>
 \qecho <h2 style="font-family:verdana">Execution Plan</h2>
 \qecho <br>
-select concat_ws('','<pre>',plainplan,'</pre>') as "Execution Plan"  from plan_table where planid = :planid;
+--select concat_ws('','<pre>',plainplan,'</pre>') as "Execution Plan"  from plan_table where planid = :planid;
+\qecho <pre>
+with plan_table1 as (select (unnest(string_to_array(a.e,' '))) col1, a.r from plan_table ,
+					 lateral unnest(string_to_array(PLAINPLAN,E'\n')) WITH ORDINALITY AS a(e,r) where planid = :planid),
+tblname as (select distinct tblname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname),
+idxname as (select distinct idxname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Index Name') as idxname)
+select string_agg(CASE WHEN exists (SELECT 1 FROM tblname WHERE plan_table1.col1 ~* (tblname.schname || '.' || tblname.objname) LIMIT 1)
+THEN '<div class="tooltip-container"><a href="#Databaseobjects2">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+                    <th>Table_Size</th>
+                    <th>Index_Size</th>
+				    <th>TablePages</th>
+				    <th>LiveRows</th>
+				    <th>DeadRows</th>
+				  	<th>LVacuumTime</th>
+				    <th>LAnalyzeTime</th>
+                </tr>' ||
+				  (select concat_ws('','<tr><td>',"Table_Size",'</td><td>',"Index_Size",'</td><td>',"TablePages",'</td><td>',"LiveRows",'</td><td>',"DeadRows",
+				 '</td><td>',"LVacuumTime",'</td><td>',"LAnalyzeTime",'</td></tr>')
+from 
+(select pg_size_pretty(pg_relation_size(relname::regclass)) as "Table_Size",
+pg_size_pretty(pg_total_relation_size(relname::regclass) - pg_relation_size(relname::regclass)) as "Index_Size",
+tbls."Pages"      as "TablePages",
+tbls."Ltup"       as "LiveRows",
+tbls."Dtup"       as "DeadRows",
+tbls."LVacuum"    as "LVacuumTime",
+tbls."LAnalyze"   as "LAnalyzeTime"
+ from planstats.VW_TABLE_STATS tbls , tblname
+where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%' else tbls."Sname" end  and tbls."relname" = tblname.objname) alias1 limit 1)
+				  ||'</table></div></a></div>'
+WHEN exists (SELECT 1 FROM idxname WHERE plan_table1.col1 ~* idxname.objname LIMIT 1)
+THEN '<div class="tooltip-container"><a href="#Databaseobjects3">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+                    <th>IndexSize</th>
+                    <th>IndexScan</th>
+				    <th>LastIndexScan</th>
+				    <th>IndexEntryScan</th>
+				    <th>TableRowsFetch</th>
+				  	<th>IndexDefinition</th>
+                </tr>' ||
+				  (select concat_ws('','<tr><td>',"IndexSize",'</td><td>',"IndexScan",'</td><td>',"LastIndexScan",'</td><td>',"IndexEntryScan",'</td><td>',"TableRowsFetch",
+				 '</td><td>',"IndexDef",'</td></tr>')
+from 
+(select idx."Size"         as "IndexSize",
+idx."Scan"         as "IndexScan",
+idx."LScan"        as "LastIndexScan",
+idx."TRead"        as "IndexEntryScan",
+idx."TFetch"       as "TableRowsFetch",
+idx."Details"      as "IndexDef"
+ from planstats.VW_INDEX_STATS idx , tblname, idxname
+where idx."Sname" = tblname.schname and idx.relname = tblname.objname
+and idx.indexrelname = idxname.objname and plan_table1.col1 ~* idxname.objname ) alias1 limit 1)
+				  ||'</table></div></a></div>'
+else plan_table1.col1
+end,' ')
+from plan_table1
+GROUP BY r order by r ;
+\qecho </pre>
 \pset format html
 \pset tuples_only off
 \qecho <br>
@@ -102,7 +160,7 @@ select concat_ws('','<pre>',plainplan,'</pre>') as "Execution Plan"  from plan_t
 \qecho <h2>Performance Metrics - pg_stats_statements </h2>
 \qecho <br>
 
-\qecho <li><a href="#QueryDetails">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects2">Next</a></li>
+\qecho <li><a href="#QueryDetails">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects2">Next</a></li>
 \qecho <h4>This section shows the underlying runtime execution stats of SQL.</h4>
 
 SELECT        queryid as "QueryID",
@@ -122,7 +180,7 @@ ORDER BY total_exec_time DESC;
 \qecho <p id="Databaseobjects2" class="anchor"></p>
 \qecho <h2>Database Table Stats Summary </h2>
 \qecho <br>
-\qecho <li><a href="#Databaseobjects1">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects3">Next</a></li>
+\qecho <li><a href="#Databaseobjects1">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects3">Next</a></li>
 \qecho <h4>This section shows the underlying stats of the table referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
@@ -152,7 +210,7 @@ where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%
 \qecho <p id="Databaseobjects3" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Database Index Stats Summary</h2>
 
-\qecho <li><a href="#Databaseobjects2">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects4">Next</a></li>
+\qecho <li><a href="#Databaseobjects2">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects4">Next</a></li>
 \qecho <h4>This section shows the underlying stats of the index referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
@@ -174,7 +232,7 @@ and idx.indexrelname = idxname.objname;
 \qecho <p id="Databaseobjects4" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Execution Plan Columns Stats Summary</h2>
 
-\qecho <li><a href="#Databaseobjects3">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects5">Next</a></li>
+\qecho <li><a href="#Databaseobjects3">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects5">Next</a></li>
 \qecho <h4>This section shows the underlying stats of the column referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
@@ -202,7 +260,7 @@ and  filters.objname ~* cols."CName";
 \qecho <p id="Databaseobjects5" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Execution Plan Extended Stats Summary</h2>
 
-\qecho <li><a href="#Databaseobjects3">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects6">Next</a></li>
+\qecho <li><a href="#Databaseobjects3">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects6">Next</a></li>
 \qecho <h4>This section shows the underlying extended stats of the Table referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
@@ -228,7 +286,7 @@ ORDER BY 1,2,3;
 \qecho <p id="Databaseobjects6" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Execution Plan Trigger Stats Summary</h2>
 
-\qecho <li><a href="#Databaseobjects5">Previous : </a><a href="#Top">Top : </a><a href="#Databaseobjects7">Next</a></li>
+\qecho <li><a href="#Databaseobjects5">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#Databaseobjects7">Next</a></li>
 \qecho <h4>This section shows the underlying details of triggers referenced in the execution plan, if any.</h4>
 
 select 
@@ -245,7 +303,7 @@ and planid = :planid and lower(steps) LIKE 'trigger %';
 \qecho <p id="Databaseobjects7" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Execution Plan Function Stats Summary</h2>
 
-\qecho <li><a href="#Databaseobjects6">Previous : </a><a href="#Top">Top : </a><a href="#DatabaseConfDetails">Next</a></li>
+\qecho <li><a href="#Databaseobjects6">Previous : </a><a href="#ExecutionPlanDetailsAnchor">Top : </a><a href="#DatabaseConfDetails">Next</a></li>
 \qecho <h4>This section shows the underlying details of functions referenced in the execution plan, but only if the <i>track_functions</i> flag is set.</h4>
 
 with plan_table as (

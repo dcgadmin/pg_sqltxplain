@@ -162,7 +162,7 @@ ALTER TABLE planstats.plan_table ALTER COLUMN planid ADD GENERATED ALWAYS AS IDE
 );
 
 CREATE VIEW planstats.vw_column_stats AS
- SELECT ( SELECT ((pg_class.relnamespace)::regnamespace)::text AS relnamespace
+SELECT ( SELECT ((pg_class.relnamespace)::regnamespace)::text AS relnamespace
            FROM pg_class
           WHERE (pg_class.oid = a.attrelid)) AS "SName",
     ((a.attrelid)::regclass)::text AS "TName",
@@ -176,8 +176,8 @@ CREATE VIEW planstats.vw_column_stats AS
     pg_stats.n_distinct AS "Distnct",
     round((pg_stats.correlation)::numeric, 3) AS "Cluster",
        ROUND(CASE
-        WHEN pg_stats.n_distinct > 0 THEN ((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac))/n_distinct
-        ELSE ((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac))/(abs(n_distinct)*((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid)*(1-pg_stats.null_frac)))
+        WHEN pg_stats.n_distinct > 0 THEN (nullif((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid),0)*(1-pg_stats.null_frac))/n_distinct
+        ELSE (nullif((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid),0)*(1-pg_stats.null_frac))/nullif((abs(n_distinct)*(nullif((SELECT reltuples FROM pg_class WHERE pg_class.oid = a.attrelid),0)*(1-pg_stats.null_frac))),0)
     END::numeric,2) AS "Selectivity",
     (((pg_stats.most_common_vals)::text)::text[])[1:5] AS "MCV",
     (((pg_stats.most_common_freqs)::text)::text[])[1:5] AS "MVF",
