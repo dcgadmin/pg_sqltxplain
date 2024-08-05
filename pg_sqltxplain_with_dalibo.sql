@@ -23,7 +23,7 @@ select max(planid) as planid from planstats.plan_table
 
 \endif
 
-select 'Stats_Via_Explain_Analyze' || '_' || abs((:'queryid')::bigint) || '.html' as htmlfile 
+select 'pg_sqltxplain' || '_' || abs((:'queryid')::bigint) || '.html' as htmlfile 
 \gset
 
 select 'dalibo' || '_' || abs((:'queryid')::bigint) || '.html' as dalibofile 
@@ -37,11 +37,11 @@ select 'dalibo' || '_' || abs((:'queryid')::bigint) || '.html' as dalibofile
 \qecho <head>
 \qecho   <meta charset="UTF-8">
 \qecho 	 <meta name="generator" content="PSQL">
-\qecho   <title>PostgreSQL-StatsViaExplainAnalyze</title>
+\qecho   <title>PostgreSQL-pg_sqltxplain</title>
 \qecho  <style type='text/css'> body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} footer {text-align: right;font-size: smaller;}</style>
 \qecho </head>
 \qecho <body>
-\qecho <h1 style="font-family:verdana"align="center">Stats via Execution Plan Report - QueryID = :queryid</h1>
+\qecho <h1 style="font-family:verdana"align="center">pg_sqltxplain Report - QueryID = :queryid</h1>
 \qecho <div class="table-content">	
 \qecho <p style="font-family:verdana"><strong>Contents</strong></p>
 \qecho <ol>
