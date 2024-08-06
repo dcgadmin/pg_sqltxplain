@@ -39,7 +39,7 @@
 <h4 style="font-family:verdana;list-style-type:none">
 <li>pg_sqltxplain script gather stats for all database objects involved in the execution plan for a query.</li>
 </h4>
- Report Creation Time : <b>2024-08-06 16:31:03</b>
+ Report Creation Time : <b>2024-08-06 19:46:01</b>
 
 <br>
 <hr>
@@ -58,6 +58,8 @@
 <pre>
 Insert on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">public.emp<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
                     <th>Table_Size</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
@@ -65,7 +67,7 @@ Insert on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseob
 				    <th>DeadRows</th>
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
-                </tr><tr><td>8192 bytes</td><td>8192 bytes</td><td>0</td><td>0</td><td>0</td><td>22-JUL-24 10:36:15</td><td>22-JUL-24 10:36:15</td></tr></table></div></a></div>  (cost=0.00..0.01 rows=0 width=0) (actual time=1.209..1.210 rows=0 loops=1)
+                </tr><tr><td>public</td><td>emp</td><td>8192 bytes</td><td>8192 bytes</td><td>0</td><td>0</td><td>0</td><td>22-JUL-24 10:36:15</td><td>22-JUL-24 10:36:15</td></tr></table></div></a></div>  (cost=0.00..0.01 rows=0 width=0) (actual time=1.209..1.210 rows=0 loops=1)
   Buffers: shared read=1 dirtied=1
   ->  Result  (cost=0.00..0.01 rows=1 width=120) (actual time=0.002..0.002 rows=1 loops=1)
         Output: 'name1'::text, 1222222, NULL::point, NULL::integer, NULL::name

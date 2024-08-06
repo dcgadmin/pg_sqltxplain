@@ -39,7 +39,7 @@
 <h4 style="font-family:verdana;list-style-type:none">
 <li>pg_sqltxplain script gather stats for all database objects involved in the execution plan for a query.</li>
 </h4>
- Report Creation Time : <b>2024-08-06 16:24:00</b>
+ Report Creation Time : <b>2024-08-06 19:46:26</b>
 
 <br>
 <hr>
@@ -68,14 +68,19 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
   Buffers: shared hit=1 read=494
   ->  Index Scan using <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects3">testplanstats_col1_key<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+				    <th>IndexName</th>
                     <th>IndexSize</th>
                     <th>IndexScan</th>
 				    <th>LastIndexScan</th>
 				    <th>IndexEntryScan</th>
 				    <th>TableRowsFetch</th>
 				  	<th>IndexDefinition</th>
-                </tr><tr><td>2208 kB</td><td>10</td><td>05-AUG-24 21:02:32</td><td>10</td><td>10</td><td>UNIQUE      btree (col1)</td></tr></table></div></a></div> on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">planstats.testplanstats<div class="tooltip-content"><table class="tooltip-table">
+                </tr><tr><td>planstats</td><td>testplanstats</td><td>testplanstats_col1_key</td><td>2208 kB</td><td>10</td><td>05-AUG-24 21:02:32</td><td>10</td><td>10</td><td>UNIQUE      btree (col1)</td></tr></table></div></a></div> on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">planstats.testplanstats<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
                     <th>Table_Size</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
@@ -83,7 +88,7 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
 				    <th>DeadRows</th>
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
-                </tr><tr><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div>  (cost=0.29..8.31 rows=1 width=12) (actual time=0.385..0.386 rows=1 loops=1)
+                </tr><tr><td>planstats</td><td>testplanstats</td><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div>  (cost=0.29..8.31 rows=1 width=12) (actual time=0.385..0.386 rows=1 loops=1)
         Output: testplanstats.col1, testplanstats.col2, testplanstats.col3
         Index Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(testplanstats.col1<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
@@ -101,6 +106,8 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
         Buffers: shared read=3
   ->  Bitmap Heap Scan on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">planstats.testplanstats<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
                     <th>Table_Size</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
@@ -108,7 +115,7 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
 				    <th>DeadRows</th>
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
-                </tr><tr><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div> testplanstats_1  (cost=4.37..40.21 rows=10 width=12) (actual time=0.131..0.131 rows=0 loops=1)
+                </tr><tr><td>planstats</td><td>testplanstats</td><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div> testplanstats_1  (cost=4.37..40.21 rows=10 width=12) (actual time=0.131..0.131 rows=0 loops=1)
         Output: testplanstats_1.col1, testplanstats_1.col2, testplanstats_1.col3
         Recheck Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(testplanstats_1.col2<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
@@ -126,13 +133,16 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
         Buffers: shared read=2
         ->  Bitmap Index Scan on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects3">idx_testplanstats1<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+				    <th>IndexName</th>
                     <th>IndexSize</th>
                     <th>IndexScan</th>
 				    <th>LastIndexScan</th>
 				    <th>IndexEntryScan</th>
 				    <th>TableRowsFetch</th>
 				  	<th>IndexDefinition</th>
-                </tr><tr><td>816 kB</td><td>10</td><td>05-AUG-24 21:02:32</td><td>0</td><td>0</td><td>btree (col2)</td></tr></table></div></a></div>  (cost=0.00..4.37 rows=10 width=0) (actual time=0.129..0.129 rows=0 loops=1)
+                </tr><tr><td>planstats</td><td>testplanstats</td><td>idx_testplanstats1</td><td>816 kB</td><td>10</td><td>05-AUG-24 21:02:32</td><td>0</td><td>0</td><td>btree (col2)</td></tr></table></div></a></div>  (cost=0.00..4.37 rows=10 width=0) (actual time=0.129..0.129 rows=0 loops=1)
               Index Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(testplanstats_1.col2<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
 				  	<th>TableName</th>
@@ -149,6 +159,8 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
               Buffers: shared read=2
   ->  Seq Scan on <div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">planstats.testplanstats<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
                     <th>Table_Size</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
@@ -156,7 +168,7 @@ Append  (cost=0.29..1793.62 rows=1020 width=12) (actual time=0.386..12.562 rows=
 				    <th>DeadRows</th>
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
-                </tr><tr><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div> testplanstats_2  (cost=0.00..1740.00 rows=1009 width=12) (actual time=0.007..11.957 rows=1011 loops=1)
+                </tr><tr><td>planstats</td><td>testplanstats</td><td>3920 kB</td><td>3056 kB</td><td>490</td><td>100000</td><td>0</td><td>01-AUG-24 13:00:46</td><td>01-AUG-24 13:00:46</td></tr></table></div></a></div> testplanstats_2  (cost=0.00..1740.00 rows=1009 width=12) (actual time=0.007..11.957 rows=1011 loops=1)
         Output: testplanstats_2.col1, testplanstats_2.col2, testplanstats_2.col3
         Filter: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(testplanstats_2.col3<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>

@@ -103,6 +103,8 @@ select string_agg(
 	WHEN exists (SELECT 1 FROM tblname WHERE plan_table1.col1 ~* (tblname.schname || '.' || tblname.objname) LIMIT 1)
 	THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
                     <th>Table_Size</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
@@ -111,10 +113,11 @@ select string_agg(
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
                 </tr>' ||
-				  (select concat_ws('','<tr><td>',"Table_Size",'</td><td>',"Index_Size",'</td><td>',"TablePages",'</td><td>',"LiveRows",'</td><td>',"DeadRows",
+				  (select concat_ws('','<tr><td>',"SchemaName",'</td><td>',"TableName",'</td><td>',"Table_Size",'</td><td>',"Index_Size",'</td><td>',"TablePages",'</td><td>',"LiveRows",'</td><td>',"DeadRows",
 				 '</td><td>',"LVacuumTime",'</td><td>',"LAnalyzeTime",'</td></tr>')
 from 
-(select pg_size_pretty(pg_relation_size(relname::regclass)) as "Table_Size",
+(select tbls."Sname" as "SchemaName",
+tbls."relname" as "TableName", pg_size_pretty(pg_relation_size(relname::regclass)) as "Table_Size",
 pg_size_pretty(pg_total_relation_size(relname::regclass) - pg_relation_size(relname::regclass)) as "Index_Size",
 tbls."Pages"      as "TablePages",
 tbls."Ltup"       as "LiveRows",
@@ -127,6 +130,9 @@ where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%
 WHEN exists (SELECT 1 FROM idxname WHERE plan_table1.col1 ~* idxname.objname LIMIT 1)
 THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects3">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+				    <th>IndexName</th>
                     <th>IndexSize</th>
                     <th>IndexScan</th>
 				    <th>LastIndexScan</th>
@@ -134,10 +140,14 @@ THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobject
 				    <th>TableRowsFetch</th>
 				  	<th>IndexDefinition</th>
                 </tr>' ||
-				  (select concat_ws('','<tr><td>',"IndexSize",'</td><td>',"IndexScan",'</td><td>',"LastIndexScan",'</td><td>',"IndexEntryScan",'</td><td>',"TableRowsFetch",
+				  (select concat_ws('','<tr><td>',"SchemaName",'</td><td>',"TableName",'</td><td>',"IndexName",'</td><td>',"IndexSize",'</td><td>',"IndexScan",'</td><td>',"LastIndexScan",'</td><td>',"IndexEntryScan",'</td><td>',"TableRowsFetch",
 				 '</td><td>',"IndexDef",'</td></tr>')
 from 
-(select idx."Size"         as "IndexSize",
+(select 
+idx."Sname" as "SchemaName",
+idx."relname" as "TableName",
+idx."indexrelname" as "IndexName",
+idx."Size"         as "IndexSize",
 idx."Scan"         as "IndexScan",
 idx."LScan"        as "LastIndexScan",
 idx."TRead"        as "IndexEntryScan",
