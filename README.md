@@ -4,7 +4,7 @@ Analyzing execution plans is made easier with curating execution plan, statistic
 
 This tool automates the curation of object statistics when analyzing problematic execution plans in PostgreSQL using an HTML template embded in sql file and the `psql` command line.
 
-## How it Works?
+### How it Works?
 Execution plan is generated either by `Explain Analyze Buffers` or only with `Explain` and stored in a plantable.
 
 Using the `psql` command line, the current statistics of all database objects involved in Execution plan are fetched and included in the HTML output. The output can also be integrated with the [PEV2 visualiser](https://github.com/dalibo/pev2).
@@ -13,10 +13,10 @@ Using the `psql` command line, the current statistics of all database objects in
   <img src="https://github.com/user-attachments/assets/6ab56914-2158-44eb-b663-062b861e153b" alt="Screen Recording" width="600" height="450"/>
 </div>
 
-## Installation 
+###  Installation 
 Setup Databases with necessary wrappers code that generate execution plan and stored it in plantable.
 
-### Extension Dependency 
+#### Extension Dependency 
 This tool uses the `pg_stat_statements` view to extract runtime information of problematic SQL using `queryid`. It can also be used as filters to gather Generic Plan from `pg_stat_statements`. The `pgstattuple` extension is used to extract bloat-related information, though it is optional.
 
 ```
@@ -27,17 +27,17 @@ This tool uses the `pg_stat_statements` view to extract runtime information of p
 
 ```
 
-### Creating planstats schema
+#### Creating planstats schema
 Gathering statistics requires traversing all execution plan steps and extracting the objects involved. We have built all necessary wrappers with functions and views within the `planstats` schema. You need to set it up on the concerned databases.
 
 ```bash
 PGPASSWORD=******** psql -h <<PostgresHost>> -U <<SuperUser>> -d <<Databases>> -f pg_sqltxplain/initialsetup.sql
 ```
 
-## Generating Report including underlying stats on objects and execution plan.
+### Generating Report including underlying stats on objects and execution plan.
 We have multiple options to generate report either directly from pg_stat_statements using GENERIC_PLAN supported since PostgreSQL 16 or run SQL within wrapper functions `(run_plan_analyze/run_plan_explain)`
 
-### Option 1 - Running Problematic SQL using `run_plan_analyze` Wrapper
+#### Option 1 - Running Problematic SQL using `run_plan_analyze` Wrapper
 
 Using Dollar Quoting enclosed problematic SQL as input and run it using function `run_plan_analyze` defined in `planstats` schema.
 
@@ -60,7 +60,7 @@ Underlying Statistics curated for Query(7335632667878063635) - Output File Stats
 
 Please note - Replace Host, DBname and Password as per your DB instances.
 
-### Option 2 - Running Only Explain on Problematic SQL using Wrapper
+####  Option 2 - Running Only Explain on Problematic SQL using Wrapper
 
 Using Dollar Quoting enclosed problematic SQL as input and run it using function `run_plan_explain` defined in `planstats` schema.
 
@@ -80,14 +80,14 @@ Gathering Database Object Stats for Query ID(7335632667878063635)
 Underlying Statistics curated for Query(7335632667878063635) - Output File pg_sqltxplain_7335632667878063635.html
 ```
 
-### Option 3 - Running using `pg_stat_statements` performance views (Preferably for PostgreSQL 16 onwards)
+####  Option 3 - Running using `pg_stat_statements` performance views (Preferably for PostgreSQL 16 onwards)
 Using -v option of `psql`, we can pass `queryid` filters along with `pg_stat_statements` to use internal performance views to extract query metadata. It internally used `GENERIC_PLAN` plan options to generate underlying explain plan using `query` column.
 
 ```bash
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=8192079375982646892 -v pg_stat_statements= -f stats_via_explain_analyze.sql
 ```
 
-## Integrations with `Pev2 Visualiser`
+### Integrations with `Pev2 Visualiser`
 Integrate Execution plan objects statistics with [PEV2 visualiser](https://github.com/dalibo/pev2) a graphical vizualization of a PostgreSQL execution plan.
 
 With any of the options mentioned previously, we can choose to get underlying stats of Objects with auto integrated it with PEV2. 
@@ -99,13 +99,13 @@ Please note that we will need to share both generated HTML files.
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
 ```
 
-## Sample Report 
+### Sample Report 
 Check out sample html report created using  pg_sqltxplain utility.
 1. [Sample 1 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_7740365855379636009.html)
 2. [Sample 2 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_1545576602608240663.html)
 3. [Sample 3 - pg_sqltxplainDalibo](https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
 
-## Contact Details.
+### Contact Details.
 Feel free to mail us(`contact@datacloudgaze.com`) for any issues or consulting on PostgreSQL performance Tuning.
 
 [www.datacloudgaze.com](www.datacloudgaze.com)
