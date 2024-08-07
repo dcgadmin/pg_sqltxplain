@@ -131,9 +131,7 @@ ORDER BY total_exec_time DESC;
 \qecho <h4>This section shows the underlying stats of the table referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
-tblname as (select distinct tblname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname),
-idxname as (select distinct idxname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Index Name') as idxname),
-filters as (select distinct filters.* from plan_table , lateral extract_filters(jsonplan::jsonb)  as filters)
+tblname as (select distinct (tblname.schname || '.' || tblname.objname)::regclass::oid as oid from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname)
 select distinct tbls."Sname"      as "SchemaName",
 tbls.relname    as "TableName",
 pg_size_pretty(pg_relation_size(relname::regclass)) as "Table_Size",
@@ -141,6 +139,7 @@ pg_size_pretty(pg_total_relation_size(relname::regclass) - pg_relation_size(reln
 tbls."Pages"      as "TablePages",
 tbls."Ltup"       as "LiveRows",
 tbls."Dtup"       as "DeadRows",
+tbls."MissingStats"   as "MissingStats",
 tbls."Part"       as "Partition?",
 tbls."BloatPCT%"  as "BloatPerc",
 tbls."hot_rate" as "HOT rate",
@@ -152,7 +151,7 @@ tbls."av_threshold"   as "AVThreshold",
 tbls."expect_av"   as "Expect_AV",
 tbls."Pubs"       as "Pub?"
  from planstats.VW_TABLE_STATS tbls , tblname
-where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%' else tbls."Sname" end  and tbls."relname" = tblname.objname;
+where tbls.oid = tblname.oid  ;
 
 \qecho <p id="Databaseobjects3" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Database Index Stats Summary</h2>
@@ -200,7 +199,7 @@ cols."Cmprssn"    as "Compression",
 cols."StatTarget" as "Statistics Target",
 cols."MCV"        as "Most Common Val(5)",
 cols."MVF"        as "Most Common Freq(5)" 
- from filters, planstats.VW_COLUMN_STATS cols , tblname
+from filters, planstats.VW_COLUMN_STATS cols , tblname
 where cols."SName" = tblname.schname and cols."TName" = tblname.objname
 and  filters.objname ~* cols."CName";
 
