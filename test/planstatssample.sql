@@ -1,4 +1,5 @@
 drop table if exists testplanstats;
+drop table if exists testplannostats;
 
 create table testplanstats as 
 	select generate_series col1, 
@@ -14,6 +15,11 @@ from testplanstats;
 
 vacuum analyze testplanstats;
 
+create table testplannostats as 
+	select generate_series col1, 
+	case when mod(generate_series,99) between 0 and 50 then null else mod(generate_series,9999)+1 end col2,  
+	mod(generate_series,99) col3 from generate_series(1,10);
+
 set work_mem to '1MB';
 
 SELECT PLANSTATS.RUN_PLAN_ANALYZE
@@ -25,7 +31,9 @@ SELECT PLANSTATS.RUN_PLAN_ANALYZE
 		WHERE t2.col2 = 1
 		UNION ALL SELECT *
 		FROM testplanstats as t3
-		WHERE col3 = 1 $$);
+		WHERE col3 = 1 
+		UNION ALL SELECT * 
+		FROM testplannostats AS t4$$);
 
 --Running base statsviaexplainanalyze report
 PGPASSWORD=******* psql -h localhost -U postgres -d plantest -q -v ON_ERROR_STOP=1 -f stats_via_explain_analyze.sql

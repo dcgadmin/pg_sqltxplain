@@ -101,7 +101,7 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 
 ### Sample Report 
 Check out sample html report created using  pg_sqltxplain utility.
-1. [Sample 1 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_7740365855379636009.html)
+1. [Sample 1 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_8388037885303713885.html)
 2. [Sample 2 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_1545576602608240663.html)
 3. [Sample 3 - pg_sqltxplainDalibo](https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
 
