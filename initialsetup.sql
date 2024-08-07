@@ -19,6 +19,7 @@ SET row_security = off;
 
 ALTER TABLE IF EXISTS ONLY planstats.plan_table DROP CONSTRAINT IF EXISTS plan_table_pkey;
 DROP VIEW IF EXISTS planstats.vw_table_stats;
+DROP VIEW IF EXISTS planstats.vw_table_stats_wo_bloat;
 DROP VIEW IF EXISTS planstats.vw_index_stats_tuple;
 DROP VIEW IF EXISTS planstats.vw_index_stats;
 DROP VIEW IF EXISTS planstats.vw_column_stats;
@@ -162,7 +163,7 @@ ALTER TABLE planstats.plan_table ALTER COLUMN planid ADD GENERATED ALWAYS AS IDE
 );
 
 CREATE VIEW planstats.vw_column_stats AS
-SELECT ( SELECT ((pg_class.relnamespace)::regnamespace)::text AS relnamespace
+SELECT a.attrelid as oid, ( SELECT ((pg_class.relnamespace)::regnamespace)::text AS relnamespace
            FROM pg_class
           WHERE (pg_class.oid = a.attrelid)) AS "SName",
     ((a.attrelid)::regclass)::text AS "TName",
@@ -218,6 +219,57 @@ CREATE VIEW planstats.vw_index_stats AS
            FROM pg_indexes idx
           WHERE ((idx.schemaname = pg_stat_user_indexes.schemaname) AND (idx.tablename = pg_stat_user_indexes.relname) AND (idx.indexname = pg_stat_user_indexes.indexrelname))) AS "Details"
    FROM pg_stat_user_indexes;
+
+
+CREATE VIEW planstats.vw_table_stats_wo_bloat AS
+ SELECT pg_class.oid,
+    pg_tables.schemaname AS "Sname",
+    pg_tables.tablename AS relname,
+    pg_size_pretty(pg_table_size((pg_class.oid)::regclass)) AS "Size",
+    pg_class.reltuples AS "Ltup",
+    pg_class.relpages AS "Pages",
+    pg_stat_user_tables.n_dead_tup AS "Dtup",
+    COALESCE(( SELECT 'Y'::text AS text
+           FROM pg_partitioned_table
+          WHERE (pg_partitioned_table.partrelid = pg_class.oid)), 'N'::text) AS "Part",
+    (((COALESCE(pg_stat_user_tables.n_tup_ins, (0)::bigint) + (2 * COALESCE(pg_stat_user_tables.n_tup_upd, (0)::bigint))) - COALESCE(pg_stat_user_tables.n_tup_hot_upd, (0)::bigint)) + COALESCE(pg_stat_user_tables.n_tup_del, (0)::bigint)) AS total_writes,
+    ((((COALESCE(pg_stat_user_tables.n_tup_hot_upd, (0)::bigint))::double precision * (100)::double precision) / (
+        CASE
+            WHEN (pg_stat_user_tables.n_tup_upd > 0) THEN pg_stat_user_tables.n_tup_upd
+            ELSE (1)::bigint
+        END)::double precision))::numeric(10,2) AS hot_rate,
+    ( SELECT r.v[1] AS v
+           FROM regexp_matches((pg_class.reloptions)::text, 'fillfactor=(d+)'::text) r(v)
+         LIMIT 1) AS fillfactor,
+    COALESCE(( SELECT r.v[1] AS v
+           FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_threshold=(d+)'::text) r(v)
+         LIMIT 1), current_setting('autovacuum_vacuum_threshold'::text)) AS autovacuum_vacuum_threshold,
+    COALESCE(( SELECT r.v[1] AS v
+           FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_scale_factor=(d+)'::text) r(v)
+         LIMIT 1), current_setting('autovacuum_vacuum_scale_factor'::text)) AS autovacuum_vacuum_scale_factor,
+    to_char(GREATEST(pg_stat_user_tables.last_vacuum, pg_stat_user_tables.last_autovacuum), 'DD-MON-YY HH24:MI:SS'::text) AS "LVacuum",
+    to_char(GREATEST(pg_stat_user_tables.last_analyze, pg_stat_user_tables.last_autoanalyze), 'DD-MON-YY HH24:MI:SS'::text) AS "LAnalyze",
+    to_char((((COALESCE(( SELECT r.v[1] AS v
+           FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_threshold=(d+)'::text) r(v)
+         LIMIT 1), current_setting('autovacuum_vacuum_threshold'::text)))::bigint)::double precision + (((COALESCE(( SELECT r.v[1] AS v
+           FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_scale_factor=(d+)'::text) r(v)
+         LIMIT 1), current_setting('autovacuum_vacuum_scale_factor'::text)))::numeric)::double precision * pg_class.reltuples)), '9G999G999G999'::text) AS av_threshold,
+        CASE
+            WHEN ((((COALESCE(( SELECT r.v[1] AS v
+               FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_threshold=(d+)'::text) r(v)
+             LIMIT 1), current_setting('autovacuum_vacuum_threshold'::text)))::bigint)::double precision + (((COALESCE(( SELECT r.v[1] AS v
+               FROM regexp_matches((pg_class.reloptions)::text, 'autovacuum_vacuum_scale_factor=(d+)'::text) r(v)
+             LIMIT 1), current_setting('autovacuum_vacuum_scale_factor'::text)))::numeric)::double precision * pg_class.reltuples)) < (pg_stat_user_tables.n_dead_tup)::double precision) THEN 'Due To Run'::text
+            ELSE ''::text
+        END AS expect_av,
+    COALESCE(( SELECT 'Y'::text AS text
+           FROM pg_publication_tables p
+          WHERE ((p.schemaname = pg_stat_user_tables.schemaname) AND (p.tablename = pg_class.relname))
+         LIMIT 1), 'N'::text) AS "Pubs"
+   FROM ((pg_class
+     JOIN pg_tables ON ((pg_class.oid = (((((pg_tables.schemaname)::text || '.'::text) || (pg_tables.tablename)::text))::regclass)::oid)))
+     LEFT JOIN pg_stat_user_tables ON (((pg_tables.schemaname = pg_stat_user_tables.schemaname) AND (pg_tables.tablename = pg_stat_user_tables.relname))));
+
 
 CREATE VIEW planstats.vw_table_stats AS
  WITH constants AS (
@@ -341,7 +393,7 @@ CREATE VIEW planstats.vw_table_stats AS
             table_estimates_plus.est_rows
            FROM table_estimates_plus
         )
- SELECT pg_tables.schemaname AS "Sname",
+ SELECT pg_class.oid , pg_tables.schemaname AS "Sname",
     pg_tables.tablename AS relname,
     pg_size_pretty(pg_table_size(((((((pg_tables.schemaname)::text || '.'::text) || (pg_tables.tablename)::text))::regclass)::oid)::regclass)) AS "Size",
     pg_class.reltuples AS "Ltup",

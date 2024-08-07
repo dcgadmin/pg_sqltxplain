@@ -92,15 +92,15 @@ select concat_ws('','<pre>',sql,'</pre>')  as "SQLTEXT" from plan_table where pl
 --select concat_ws('','<pre>',plainplan,'</pre>') as "Execution Plan"  from plan_table where planid = :planid;
 \qecho <pre>
 
-with plan_table as (select * from plan_table where planid = :planid),
-plan_table1 as (select (unnest(string_to_array(a.e,' '))) col1, a.r , starts_with(lower(trim(a.e)),'output:') as addinfo from plan_table ,
+WITH
+ plan_table as (select * from plan_table where planid = :planid),
+plan_table1 as (select (unnest(string_to_array(a.e,' '))) col1, a.r , trim(a.e) ~ '^(Filter|Sort Key|Group Key|Hash Key|Presorted Key|Cache Key|Join Filter|One-Time Filter|Conflict Filter|Hash Cond|Run Condition|Index Cond|Recheck Cond|TID Cond|Merge Cond|Order By|Recheck Cond|Heap Fetches|Pre-sorted|Full-sort|Function Call|Table Function Call|Function Name|Table Function Name)' as filterinfo from plan_table ,
 					 lateral unnest(string_to_array(PLAINPLAN,E'\n')) WITH ORDINALITY AS a(e,r) where planid =:planid),
-tblname as (select distinct tblname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname),
-idxname as (select distinct idxname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Index Name') as idxname),
-filters as (select distinct filters.* from plan_table , lateral extract_filters(jsonplan::jsonb)  as filters)
+tblname as (select distinct tblname.schname , tblname.objname, (tblname.schname || '.' || tblname.objname)::regclass::oid as oid from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname),
+idxname as (select distinct idxname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Index Name') as idxname)
 select string_agg(
 	CASE 
-	WHEN exists (SELECT 1 FROM tblname WHERE plan_table1.col1 ~* (tblname.schname || '.' || tblname.objname) LIMIT 1)
+	WHEN exists (SELECT 1 FROM tblname WHERE strpos(plan_table1.col1,(tblname.schname || '.' || tblname.objname)) > 0)
 	THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
                     <th>SchemaName</th>
@@ -124,10 +124,11 @@ tbls."Ltup"       as "LiveRows",
 tbls."Dtup"       as "DeadRows",
 tbls."LVacuum"    as "LVacuumTime",
 tbls."LAnalyze"   as "LAnalyzeTime"
- from planstats.VW_TABLE_STATS tbls , tblname
-where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%' else tbls."Sname" end  and tbls."relname" = tblname.objname) alias1 limit 1)
+ from planstats.vw_table_stats_wo_bloat tbls , tblname
+ where tbls.oid = tblname.oid
+and exists (SELECT 1 FROM tblname WHERE strpos(plan_table1.col1,(tbls."Sname" || '.' || tbls."relname")) > 0)) alias1)
 				  ||'</table></div></a></div>'
-WHEN exists (SELECT 1 FROM idxname WHERE plan_table1.col1 ~* idxname.objname LIMIT 1)
+WHEN exists (SELECT 1 FROM idxname WHERE strpos(plan_table1.col1,idxname.objname) > 0)
 THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects3">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
                     <th>SchemaName</th>
@@ -155,9 +156,9 @@ idx."TFetch"       as "TableRowsFetch",
 idx."Details"      as "IndexDef"
  from planstats.VW_INDEX_STATS idx , tblname, idxname
 where idx."Sname" = tblname.schname and idx.relname = tblname.objname
-and idx.indexrelname = idxname.objname and plan_table1.col1 ~* idxname.objname ) alias1 limit 1)
+and idx.indexrelname = idxname.objname and strpos(plan_table1.col1,idxname.objname ) > 0 ) alias1 limit 1)
 				  ||'</table></div></a></div>'
-	WHEN not addinfo and exists (SELECT 1 FROM filters WHERE strpos(objname,plan_table1.col1) > 0 LIMIT 1)
+	WHEN filterinfo
 THEN coalesce('<div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
 				  	<th>TableName</th>
@@ -184,8 +185,7 @@ cols."Selectivity" as "Selectivity",
 cols."Store"      as "Storage Type",
 cols."StatTarget" as "Statistics Target"
  from planstats.VW_COLUMN_STATS cols , tblname 
-	where cols."SName" = tblname.schname and cols."TName" = tblname.objname
-and  strpos(plan_table1.col1,cols."CName") > 0 limit 1) alias1 limit 1)
+	where cols.oid = tblname.oid and  strpos(split_part(plan_table1.col1,'.',2),cols."CName") > 0 limit 1) alias1 limit 1)
 				  ||'</table></div></a></div>',plan_table1.col1)
 else plan_table1.col1
 end,' ')
@@ -229,7 +229,7 @@ ORDER BY total_exec_time DESC;
 \qecho <h4>This section shows the underlying stats of the table referenced in the execution plan.</h4>
 
 with plan_table as (select * from plan_table where planid = :planid), 
-tblname as (select distinct tblname.* from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname)
+tblname as (select distinct (tblname.schname || '.' || tblname.objname)::regclass::oid as oid from plan_table , lateral extract_info(jsonplan::jsonb,'Relation Name') as tblname)
 select distinct tbls."Sname"      as "SchemaName",
 tbls.relname    as "TableName",
 pg_size_pretty(pg_relation_size(relname::regclass)) as "Table_Size",
@@ -248,7 +248,7 @@ tbls."av_threshold"   as "AVThreshold",
 tbls."expect_av"   as "Expect_AV",
 tbls."Pubs"       as "Pub?"
  from planstats.VW_TABLE_STATS tbls , tblname
-where tblname.schname like case when tbls."Sname" like 'pg_temp%' then 'pg_temp%' else tbls."Sname" end  and tbls."relname" = tblname.objname;
+where tbls.oid = tblname.oid  ;
 
 \qecho <p id="Databaseobjects3" class="anchor"></p>
 \qecho <h2 style="font-family:verdana">Database Index Stats Summary</h2>
