@@ -18,13 +18,13 @@ set work_mem to '1MB';
 
 SELECT PLANSTATS.RUN_PLAN_ANALYZE
 	($$select *
-		FROM testplanstats
-		WHERE col1 = 1
+		FROM testplanstats as t1
+		WHERE t1.col1 = 1
 		UNION ALL SELECT *
-		FROM testplanstats
-		WHERE col2 = 1
+		FROM testplanstats as t2
+		WHERE t2.col2 = 1
 		UNION ALL SELECT *
-		FROM testplanstats
+		FROM testplanstats as t3
 		WHERE col3 = 1 $$);
 
 --Running base statsviaexplainanalyze report

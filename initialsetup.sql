@@ -265,7 +265,8 @@ CREATE VIEW planstats.vw_table_stats_wo_bloat AS
     COALESCE(( SELECT 'Y'::text AS text
            FROM pg_publication_tables p
           WHERE ((p.schemaname = pg_stat_user_tables.schemaname) AND (p.tablename = pg_class.relname))
-         LIMIT 1), 'N'::text) AS "Pubs"
+         LIMIT 1), 'N'::text) AS "Pubs",
+      (pg_stat_get_live_tuples(pg_class.oid) != 0 AND  NOT EXISTS (SELECT 1 FROM pg_statistic WHERE starelid=pg_class.oid))   "MissingStats"
    FROM ((pg_class
      JOIN pg_tables ON ((pg_class.oid = (((((pg_tables.schemaname)::text || '.'::text) || (pg_tables.tablename)::text))::regclass)::oid)))
      LEFT JOIN pg_stat_user_tables ON (((pg_tables.schemaname = pg_stat_user_tables.schemaname) AND (pg_tables.tablename = pg_stat_user_tables.relname))));
@@ -437,11 +438,15 @@ CREATE VIEW planstats.vw_table_stats AS
     COALESCE(( SELECT 'Y'::text
            FROM pg_publication_tables p
           WHERE ((p.schemaname = pg_stat_user_tables.schemaname) AND (p.tablename = pg_class.relname))
-         LIMIT 1), 'N'::text) AS "Pubs"
-   FROM (((pg_class
+         LIMIT 1), 'N'::text) AS "Pubs",
+               (pg_stat_get_live_tuples(pg_class.oid) != 0 AND  NOT EXISTS (SELECT 1 FROM pg_statistic WHERE starelid=pg_class.oid))   "MissingStats"
+   FROM (((pg_class LEFT JOIN pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
      JOIN pg_tables ON ((pg_class.oid = (((((pg_tables.schemaname)::text || '.'::text) || (pg_tables.tablename)::text))::regclass)::oid)))
      LEFT JOIN pg_stat_user_tables ON (((pg_tables.schemaname = pg_stat_user_tables.schemaname) AND (pg_tables.tablename = pg_stat_user_tables.relname))))
-     LEFT JOIN bloat_data bloat_data(databasename, schemaname, tablename, can_estimate, table_bytes, table_mb, expected_bytes, expected_mb, pct_bloat, bloatbytes, table_bytes_1, expected_bytes_1, est_rows) ON (((pg_stat_user_tables.schemaname = bloat_data.schemaname) AND (pg_stat_user_tables.relname = bloat_data.tablename) AND bloat_data.can_estimate)));
+     LEFT JOIN bloat_data bloat_data(databasename, schemaname, tablename, can_estimate, table_bytes, table_mb, expected_bytes, expected_mb, pct_bloat, bloatbytes, table_bytes_1, expected_bytes_1, est_rows) ON (((pg_stat_user_tables.schemaname = bloat_data.schemaname) AND (pg_stat_user_tables.relname = bloat_data.tablename) AND bloat_data.can_estimate)))
+     where pg_class.relkind IN ('r','p','') AND  n.nspname <> 'pg_catalog'
+      AND n.nspname !~ '^pg_toast'
+      AND n.nspname <> 'information_schema';
 
 ALTER TABLE ONLY planstats.plan_table
     ADD CONSTRAINT plan_table_pkey PRIMARY KEY (planid);

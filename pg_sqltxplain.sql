@@ -32,7 +32,7 @@ select 'pg_sqltxplain' || '_' || abs((:'queryid')::bigint) || '.html' as htmlfil
 \qecho <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 \qecho <meta name="generator" content="PSQL">
 \qecho  <title>PostgreSQL-pg_sqltxplain</title>
-\qecho  <style type='text/css'> .tooltip-container{position:relative;display:inline;cursor:pointer}.tooltip-content{visibility:hidden;position:absolute;left:100%;top:50%;transform:translateY(-50%);background-color:#f9f9f9;border:1px solid #ddd;padding:10px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .3s,visibility .3s;z-index:1000}.tooltip-container:hover .tooltip-content{visibility:visible;opacity:1}.tooltip-table{border-collapse:collapse;font-size:.9em}.tooltip-table th,.tooltip-table td{border:1px solid #ddd;padding:4px 8px;text-align:left}.tooltip-table th{background-color:#f2f2f2;font-weight:700} .body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} .xplaina {font:11pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;}  footer {text-align: right;font-size: smaller;}</style>
+\qecho  <style type='text/css'> .tooltip-container{position:relative;display:inline;cursor:pointer}.tooltip-content{visibility:hidden;position:absolute;left:100%;top:50%;transform:translateY(-50%);background-color:#f9f9f9;border:1px solid #ddd;padding:10px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .3s,visibility .3s;z-index:1000}.tooltip-container:hover .tooltip-content{visibility:visible;opacity:1}.tooltip-table{border-collapse:collapse;font-size:.9em}.tooltip-table th,.tooltip-table td{border:1px solid #ddd;padding:4px 8px;text-align:left}.tooltip-table th{background-color:#f2f2f2;font-weight:700} .body {font:11pt Arial,Helvetica,sans-serif; color:black; background:White;} p {font:13pt Arial,Helvetica,sans-serif; color:black; background:White;} table,tr,td {font:12pt Arial,Helvetica,sans-serif; color:Black; background:#f7f7e7; padding:0px 0px 0px 0px; margin:0px 0px 0px 0px;} th {font:bold 10pt Arial,Helvetica,sans-serif; color:#336699; background:#cccc99; padding:0px 0px 0px 0px;} h1 {font:16pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background color:White; border-bottom:1px solid #cccc99; margin-top:0pt; margin-bottom:0pt; padding:0px 0px 0px 0px;- } h2 {font:bold 11pt Arial,Helvetica,Geneva,sans-serif; color:#336699; background-color:White; margin-top:4pt; margin-bottom:0pt;} a {font:9pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} .xplaina {font:11pt Arial,Helvetica,sans-serif; color:#663300; background:#ffffff; margin-top:0pt; margin-bottom:0pt; vertical-align:top;} .xplainattension {font:11pt Arial,Helvetica,sans-serif; color:#ff0000; background:#ffffff; font-weight: bold; margin-top:0pt; margin-bottom:0pt; vertical-align:top;}  footer {text-align: right;font-size: smaller;}</style>
 \qecho </head>
 \qecho <h1 style="font-family:verdana"align="center">pg_sqltxplain Report - QueryID = :queryid</h1>
 \qecho <div class="table-content">	
@@ -101,11 +101,12 @@ idxname as (select distinct idxname.* from plan_table , lateral extract_info(jso
 select string_agg(
 	CASE 
 	WHEN exists (SELECT 1 FROM tblname WHERE strpos(plan_table1.col1,(tblname.schname || '.' || tblname.objname)) > 0)
-	THEN '<div class="tooltip-container"><a a class ="xplaina" href="#Databaseobjects2">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
+	THEN '<div class="tooltip-container"><a class ="' || case when false then 'xplainattension' else  'xplaina' end || '" href="#Databaseobjects2">' || plan_table1.col1 || '<div class="tooltip-content"><table class="tooltip-table">
 				  <tr>
                     <th>SchemaName</th>
                     <th>TableName</th>
                     <th>Table_Size</th>
+					<th>MissingStats</th>
                     <th>Index_Size</th>
 				    <th>TablePages</th>
 				    <th>LiveRows</th>
@@ -113,7 +114,7 @@ select string_agg(
 				  	<th>LVacuumTime</th>
 				    <th>LAnalyzeTime</th>
                 </tr>' ||
-				  (select concat_ws('','<tr><td>',"SchemaName",'</td><td>',"TableName",'</td><td>',"Table_Size",'</td><td>',"Index_Size",'</td><td>',"TablePages",'</td><td>',"LiveRows",'</td><td>',"DeadRows",
+				  (select concat_ws('','<tr><td>',"SchemaName",'</td><td>',"TableName",'</td><td>',"Table_Size",'</td><td class="'|| case when "MissingStats" = 'Yes' then 'xplainattension' else '""' end || '">',"MissingStats",'</td><td>',"Index_Size",'</td><td>',"TablePages",'</td><td>',"LiveRows",'</td><td>',"DeadRows",
 				 '</td><td>',"LVacuumTime",'</td><td>',"LAnalyzeTime",'</td></tr>')
 from 
 (select tbls."Sname" as "SchemaName",
@@ -123,7 +124,8 @@ tbls."Pages"      as "TablePages",
 tbls."Ltup"       as "LiveRows",
 tbls."Dtup"       as "DeadRows",
 tbls."LVacuum"    as "LVacuumTime",
-tbls."LAnalyze"   as "LAnalyzeTime"
+tbls."LAnalyze"   as "LAnalyzeTime",
+case when tbls."MissingStats" then 'Yes' else 'No' end as "MissingStats"
  from planstats.vw_table_stats_wo_bloat tbls , tblname
  where tbls.oid = tblname.oid
 and exists (SELECT 1 FROM tblname WHERE strpos(plan_table1.col1,(tbls."Sname" || '.' || tbls."relname")) > 0)) alias1)
@@ -237,6 +239,7 @@ pg_size_pretty(pg_total_relation_size(relname::regclass) - pg_relation_size(reln
 tbls."Pages"      as "TablePages",
 tbls."Ltup"       as "LiveRows",
 tbls."Dtup"       as "DeadRows",
+tbls."MissingStats"   as "MissingStats",
 tbls."Part"       as "Partition?",
 tbls."BloatPCT%"  as "BloatPerc",
 tbls."hot_rate" as "HOT rate",
