@@ -53,7 +53,7 @@ It will return internal planid and queryid for further references.
 In next steps, we will generate pg_sqltxplain report using `psql` command line.If no Filter is provided by default it will generate report on last plan analyzed(max-planid).
 
 ```bash
-PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=7335632667878063635 -f stats_via_explain_analyze.sql
+PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=7335632667878063635 -f pg_sqltxplain.sql
 Gathering Database Object Stats for Query ID(7335632667878063635)
 Underlying Statistics curated for Query(7335632667878063635) - Output File Stats_Via_Explain_Analyze_7335632667878063635.html
 ```
@@ -84,7 +84,7 @@ Underlying Statistics curated for Query(7335632667878063635) - Output File pg_sq
 Using -v option of `psql`, we can pass `queryid` filters along with `pg_stat_statements` to use internal performance views to extract query metadata. It internally used `GENERIC_PLAN` plan options to generate underlying explain plan using `query` column.
 
 ```bash
-PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=8192079375982646892 -v pg_stat_statements= -f stats_via_explain_analyze.sql
+PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=8192079375982646892 -v pg_stat_statements= -f pg_sqltxplain.sql
 ```
 
 ### Integrations with `Pev2 Visualiser`
@@ -96,7 +96,7 @@ Internally it use two sql file to generate couple of html report as we are using
 Please note that we will need to share both generated HTML files.
 
 ```bash
-PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f stats_via_explain_analyze_with_dalibo.sql
+PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -f explain_dalibo.sql -f pg_sqltxplain_with_dalibo.sql
 ```
 
 ### Sample Report 
