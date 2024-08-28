@@ -1,9 +1,6 @@
 --
--- PostgreSQL database dump
+-- pg_sqltxplain initial setup, create necessary DB objects for storing and extrating metadata on database objects. enable extension pg_stat_statements as well;
 --
-
--- Dumped from database version 16.3
--- Dumped by pg_dump version 16.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
