@@ -451,6 +451,8 @@ CREATE VIEW planstats.vw_table_stats AS
 ALTER TABLE ONLY planstats.plan_table
     ADD CONSTRAINT plan_table_pkey PRIMARY KEY (planid);
 
+create extension if not exists pg_stat_statements;
+
 --Commented as it need pgstattuple extensions on getting bloat information.
 /*CREATE VIEW planstats.vw_index_stats_tuple AS
  SELECT schemaname AS "Sname",
