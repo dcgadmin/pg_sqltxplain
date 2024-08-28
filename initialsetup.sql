@@ -451,8 +451,8 @@ CREATE VIEW planstats.vw_table_stats AS
 ALTER TABLE ONLY planstats.plan_table
     ADD CONSTRAINT plan_table_pkey PRIMARY KEY (planid);
 
-
-CREATE VIEW planstats.vw_index_stats_tuple AS
+--Commented as it need pgstattuple extensions on getting bloat information.
+/*CREATE VIEW planstats.vw_index_stats_tuple AS
  SELECT schemaname AS "Sname",
     relname,
     indexrelname,
@@ -476,3 +476,4 @@ CREATE VIEW planstats.vw_index_stats_tuple AS
            FROM pg_indexes idx
           WHERE ((idx.schemaname = pg_stat_user_indexes.schemaname) AND (idx.tablename = pg_stat_user_indexes.relname) AND (idx.indexname = pg_stat_user_indexes.indexrelname))) AS "Details"
    FROM pg_stat_user_indexes;
+*/
