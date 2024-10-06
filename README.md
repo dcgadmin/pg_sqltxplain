@@ -1,4 +1,4 @@
-# pg_sqltxplain - Simplifying PostgreSQL Execution Plan Analysis.
+# pg_sqltxplan - Simplifying PostgreSQL Execution Plan Analysis.
 
 Analyzing execution plans is made easier with curating execution plan, statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members or external forum and reduces the need for additional information requests.
 
@@ -31,7 +31,7 @@ This tool uses the `pg_stat_statements` view to extract runtime information of p
 Gathering statistics requires traversing all execution plan steps and extracting the objects involved. We have built all necessary wrappers with functions and views within the `planstats` schema. You need to set it up on the concerned databases.
 
 ```bash
-PGPASSWORD=******** psql -h <<PostgresHost>> -U <<SuperUser>> -d <<Databases>> -f pg_sqltxplain/initialsetup.sql
+PGPASSWORD=******** psql -h <<PostgresHost>> -U <<SuperUser>> -d <<Databases>> -f pg_sqltxplan/initialsetup.sql
 ```
 
 ### Generating Report including underlying stats on objects and execution plan.
@@ -50,7 +50,7 @@ plantest=# select planstats.run_plan_analyze($$select count(1) from emp$$);
 ```
 It will return internal planid and queryid for further references.
 
-In next steps, we will generate pg_sqltxplain report using `psql` command line.If no Filter is provided by default it will generate report on last plan analyzed(max-planid).
+In next steps, we will generate pg_sqltxplan report using `psql` command line.If no Filter is provided by default it will generate report on last plan analyzed(max-planid).
 
 ```bash
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=7335632667878063635 -f pg_sqltxplain.sql
@@ -72,7 +72,7 @@ plantest=# select planstats.run_plan_explain($$select count(1) from emp$$);
 (1 row)
 ```
 
-In next steps, we will generate pg_sqltxplain report using `psql` command line.If no Filter is provided by default it will generate report on last plan analyzed(max-planid).
+In next steps, we will generate pg_sqltxplan report using `psql` command line.If no Filter is provided by default it will generate report on last plan analyzed(max-planid).
 
 ```bash
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=7335632667878063635 -f pg_sqltxplain.sql
@@ -100,10 +100,10 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 ```
 
 ### Sample Report 
-Check out sample html report created using  pg_sqltxplain utility.
-1. [Sample 1 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_8388037885303713885.html)
-2. [Sample 2 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_1545576602608240663.html)
-3. [Sample 3 - pg_sqltxplainDalibo](https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
+Check out sample html report created using  pg_sqltxplan utility.
+1. [Sample 1 - pg_sqltxplan](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplan/blob/main/samplereport/pg_sqltxplan_8388037885303713885.html)
+2. [Sample 2 - pg_sqltxplan](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplan/blob/main/samplereport/pg_sqltxplan_1545576602608240663.html)
+3. [Sample 3 - pg_sqltxplanDalibo](https://github.com/dcgadmin/pg_sqltxplan/blob/main/samplereport/StatsViaExplanAnalyze_With_dalibo.pdf)
 
 ### Contact Details.
 Feel free to mail us(`contact@datacloudgaze.com`) for any issues or consulting on PostgreSQL performance Tuning.
