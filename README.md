@@ -1,4 +1,4 @@
-# pg_sqltxplan  - Simplifying PostgreSQL Execution Plan Analysis.
+# pg_sqltxplain  - Simplifying PostgreSQL Execution Plan Analysis.
 
 Analyzing execution plans is made easier with curating execution plan, statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members or external forum and reduces the need for additional information requests.
 
@@ -101,9 +101,9 @@ PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q
 
 ### Sample Report 
 Check out sample html report created using  pg_sqltxplan utility.
-1. [Sample 1 - pg_sqltxplan](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_8388037885303713885.html)
-2. [Sample 2 - pg_sqltxplan](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_1545576602608240663.html)
-3. [Sample 3 - pg_sqltxplanDalibo](https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
+1. [Sample 1 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_8388037885303713885.html)
+2. [Sample 2 - pg_sqltxplain](https://htmlpreview.github.io/?https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/pg_sqltxplain_1545576602608240663.html)
+3. [Sample 3 - pg_sqltxplainDalibo](https://github.com/dcgadmin/pg_sqltxplain/blob/main/samplereport/StatsViaExplainAnalyze_With_dalibo.pdf)
 
 ### Contact Details.
 Feel free to mail us(`contact@datacloudgaze.com`) for any issues or consulting on PostgreSQL performance Tuning.
