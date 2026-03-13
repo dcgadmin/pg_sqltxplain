@@ -25,6 +25,8 @@ DROP FUNCTION IF EXISTS planstats.run_plan_explain(text, OUT planid integer, OUT
 DROP FUNCTION IF EXISTS planstats.run_plan_analyze(text, OUT planid integer, OUT queryid bigint);
 DROP FUNCTION IF EXISTS planstats.extract_info(jsonb, text);
 DROP FUNCTION IF EXISTS planstats.extract_filters(jsonb);
+DROP FUNCTION IF EXISTS planstats.extract_all_nodes(jsonb);
+DROP FUNCTION IF EXISTS planstats.generate_recommendations(integer);
 DROP SCHEMA IF EXISTS planstats;
 --
 -- Name: planstats; Type: SCHEMA; Schema: -; Owner: postgres
@@ -40,6 +42,260 @@ WITH filterlist as
 select objname
 from (select unnest(regexp_split_to_array((select filters from filterlist),',')) as f ) as filters, lateral extract_info(($1),filters.f);
 $_$;
+
+
+CREATE FUNCTION planstats.extract_all_nodes(p_json jsonb)
+RETURNS TABLE(node_id integer, depth integer, node jsonb)
+LANGUAGE sql AS $_$
+WITH RECURSIVE nodes(id, d, n) AS (
+    SELECT 1, 0, p_json->0->'Plan'
+  UNION ALL
+    SELECT id + rn::int + 1, d + 1, n->'Plans'->rn
+    FROM nodes,
+         LATERAL generate_series(0, jsonb_array_length(COALESCE(n->'Plans','[]'::jsonb)) - 1) AS rn
+    WHERE jsonb_array_length(COALESCE(n->'Plans','[]'::jsonb)) >= 1
+)
+SELECT id, d, n FROM nodes;
+$_$;
+
+
+CREATE FUNCTION planstats.generate_recommendations(p_planid integer)
+RETURNS TABLE(
+    severity text,
+    category text,
+    finding text,
+    recommendation text,
+    details text
+)
+LANGUAGE plpgsql AS $_X$
+DECLARE
+    v_json jsonb;
+    v_queryid bigint;
+BEGIN
+    -- Get the plan JSON and queryid
+    SELECT jsonplan::jsonb, pt.queryid
+    INTO v_json, v_queryid
+    FROM planstats.plan_table pt
+    WHERE pt.planid = p_planid;
+
+    IF v_json IS NULL THEN
+        RETURN;
+    END IF;
+
+    CREATE TEMP TABLE IF NOT EXISTS tmp_recommendations (
+        severity text,
+        category text,
+        finding text,
+        recommendation text,
+        details text
+    ) ON COMMIT DROP;
+
+    DELETE FROM tmp_recommendations;
+
+    -- Rule A: Rows Removed by Filter >> Actual Rows (HIGH / INDEX)
+    INSERT INTO tmp_recommendations
+    SELECT 'HIGH', 'INDEX',
+        'Seq Scan on ' || COALESCE(n.node->>'Relation Name', 'unknown') ||
+        ' removed ' || (n.node->>'Rows Removed by Filter') ||
+        ' rows by filter but returned only ' || (n.node->>'Actual Rows') || ' rows',
+        'Create an index on the filter columns. Consider a covering index with INCLUDE clause to enable Index Only Scan.',
+        'Filter: ' || COALESCE(n.node->>'Filter', 'N/A')
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node ? 'Rows Removed by Filter'
+      AND (n.node->>'Rows Removed by Filter')::numeric >
+          10 * GREATEST((n.node->>'Actual Rows')::numeric, 1);
+
+    -- Rule B: Sequential Scan on Large Table with Filter (HIGH / INDEX)
+    INSERT INTO tmp_recommendations
+    SELECT 'HIGH', 'INDEX',
+        'Sequential scan on ' || COALESCE(n.node->>'Relation Name', 'unknown') ||
+        ' reading ' || COALESCE(n.node->>'Actual Rows', n.node->>'Plan Rows') ||
+        ' rows with filter: ' || COALESCE(n.node->>'Filter', 'N/A'),
+        'Consider creating an index on columns used in the filter condition to avoid full table scan.',
+        'Table: ' || COALESCE(n.node->>'Schema', '') || '.' || COALESCE(n.node->>'Relation Name', 'unknown')
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Seq Scan'
+      AND n.node ? 'Filter'
+      AND COALESCE((n.node->>'Actual Rows')::numeric, (n.node->>'Plan Rows')::numeric, 0) > 10000
+      -- Avoid duplicate with Rule A when both fire
+      AND NOT (
+          n.node ? 'Rows Removed by Filter'
+          AND (n.node->>'Rows Removed by Filter')::numeric >
+              10 * GREATEST(COALESCE((n.node->>'Actual Rows')::numeric, 1), 1)
+      );
+
+    -- Rule C: Sort Spilling to Disk (HIGH / CONFIGURATION)
+    INSERT INTO tmp_recommendations
+    SELECT 'HIGH', 'CONFIGURATION',
+        'Sort operation spilled to disk using ' || (n.node->>'Sort Space Used') || 'kB',
+        'Increase work_mem to allow in-memory sorting. Current sort requires ' ||
+        (n.node->>'Sort Space Used') || 'kB.',
+        'Sort Key: ' || COALESCE(n.node->>'Sort Key', 'N/A')
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Sort'
+      AND n.node->>'Sort Space Type' = 'Disk';
+
+    -- Rule D: Hash Batches Exceeding Plan (MEDIUM / CONFIGURATION)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'CONFIGURATION',
+        'Hash operation used ' || (n.node->>'Hash Batches') ||
+        ' batches (originally planned ' || COALESCE(n.node->>'Original Hash Batches', '1') || ')',
+        'Increase work_mem to reduce hash batches. Multiple batches cause disk I/O.',
+        'Hash Buckets: ' || COALESCE(n.node->>'Hash Buckets', 'N/A')
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node ? 'Hash Batches'
+      AND (n.node->>'Hash Batches')::int > 1;
+
+    -- Rule E: Plan Row Estimate Errors (MEDIUM / STATISTICS)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'STATISTICS',
+        'Planner estimated ' || (n.node->>'Plan Rows') ||
+        ' rows but actual was ' || (n.node->>'Actual Rows') ||
+        ' rows for ' || COALESCE(n.node->>'Node Type', 'unknown') ||
+        ' on ' || COALESCE(n.node->>'Relation Name', n.node->>'Index Name', 'unknown'),
+        'Run ANALYZE on the table. If persistent, increase default_statistics_target or create extended statistics for correlated columns.',
+        'Estimation ratio: ' ||
+        CASE WHEN (n.node->>'Actual Rows')::numeric > (n.node->>'Plan Rows')::numeric
+             THEN round((n.node->>'Actual Rows')::numeric / GREATEST((n.node->>'Plan Rows')::numeric, 1), 1) || 'x underestimate'
+             ELSE round((n.node->>'Plan Rows')::numeric / GREATEST((n.node->>'Actual Rows')::numeric, 1), 1) || 'x overestimate'
+        END
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node ? 'Actual Rows' AND n.node ? 'Plan Rows'
+      AND (n.node->>'Plan Rows')::numeric > 0
+      AND (
+          (n.node->>'Actual Rows')::numeric / GREATEST((n.node->>'Plan Rows')::numeric, 1) > 10
+          OR
+          (n.node->>'Plan Rows')::numeric / GREATEST((n.node->>'Actual Rows')::numeric, 1) > 10
+      );
+
+    -- Rule F: Index Only Scan with High Heap Fetches (MEDIUM / VACUUM)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'VACUUM',
+        'Index Only Scan on ' || COALESCE(n.node->>'Index Name', 'unknown') ||
+        ' required ' || (n.node->>'Heap Fetches') ||
+        ' heap fetches for ' || (n.node->>'Actual Rows') || ' rows',
+        'Run VACUUM on table ' || COALESCE(n.node->>'Schema', '') || '.' ||
+        COALESCE(n.node->>'Relation Name', 'unknown') ||
+        ' to update the visibility map and reduce heap fetches.',
+        NULL
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Index Only Scan'
+      AND n.node ? 'Heap Fetches'
+      AND (n.node->>'Heap Fetches')::numeric >
+          0.5 * GREATEST((n.node->>'Actual Rows')::numeric, 1);
+
+    -- Rule G: Lossy Bitmap Heap Scan (MEDIUM / CONFIGURATION)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'CONFIGURATION',
+        'Bitmap Heap Scan had ' || (n.node->>'Lossy Heap Blocks') ||
+        ' lossy blocks vs ' || COALESCE(n.node->>'Exact Heap Blocks', '0') || ' exact blocks',
+        'Increase work_mem to allow exact bitmap rather than lossy. Lossy bitmaps recheck all rows in affected pages.',
+        'Table: ' || COALESCE(n.node->>'Relation Name', 'unknown')
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Bitmap Heap Scan'
+      AND n.node ? 'Lossy Heap Blocks'
+      AND (n.node->>'Lossy Heap Blocks')::numeric > 0;
+
+    -- Rule H: Nested Loop with Large Inner (LOW / QUERY)
+    INSERT INTO tmp_recommendations
+    SELECT 'LOW', 'QUERY',
+        'Nested Loop on ' || COALESCE(n.node->>'Node Type', '') ||
+        ' processes large number of rows (' || (n.node->>'Actual Rows') ||
+        ' rows x ' || COALESCE(n.node->>'Actual Loops', '1') || ' loops)',
+        'Consider restructuring the query or adding indexes to reduce inner loop iterations. Hash Join may be more efficient for large datasets.',
+        NULL
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Nested Loop'
+      AND n.node ? 'Actual Rows'
+      AND (n.node->>'Actual Rows')::numeric *
+          COALESCE((n.node->>'Actual Loops')::numeric, 1) > 100000;
+
+    -- Rule I: Parallel Query Not Used on Large Scan (LOW / CONFIGURATION)
+    INSERT INTO tmp_recommendations
+    SELECT 'LOW', 'CONFIGURATION',
+        'Large sequential scan (' ||
+        COALESCE(n.node->>'Actual Rows', n.node->>'Plan Rows') ||
+        ' rows) without parallel workers on ' ||
+        COALESCE(n.node->>'Relation Name', 'unknown'),
+        'Check max_parallel_workers_per_gather and min_parallel_table_scan_size settings. Parallel scan could significantly reduce execution time.',
+        NULL
+    FROM planstats.extract_all_nodes(v_json) n
+    WHERE n.node->>'Node Type' = 'Seq Scan'
+      AND COALESCE((n.node->>'Actual Rows')::numeric, (n.node->>'Plan Rows')::numeric, 0) > 100000
+      AND NOT n.node ? 'Workers Planned';
+
+    -- Rule J: Table Bloat > 20% (MEDIUM / VACUUM)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'VACUUM',
+        'Table ' || tbls."Sname" || '.' || tbls.relname ||
+        ' has ' || tbls."BloatPCT%" || '% bloat (' || tbls."BloatSize%" || ')',
+        'Run VACUUM FULL or use pg_repack to reclaim space. High bloat increases I/O and scan times.',
+        'Table size: ' || tbls."Size"
+    FROM planstats.extract_info(v_json, 'Relation Name') ei
+    JOIN planstats.vw_table_stats tbls
+      ON tbls.oid = (ei.schname || '.' || ei.objname)::regclass::oid
+    WHERE tbls."BloatPCT%" > 20;
+
+    -- Rule K: Missing Statistics (HIGH / STATISTICS)
+    INSERT INTO tmp_recommendations
+    SELECT 'HIGH', 'STATISTICS',
+        'Table ' || tbls."Sname" || '.' || tbls.relname || ' has no column statistics',
+        'Run: ANALYZE ' || tbls."Sname" || '.' || tbls.relname ||
+        '; Missing statistics cause the planner to make poor estimates.',
+        NULL
+    FROM planstats.extract_info(v_json, 'Relation Name') ei
+    JOIN planstats.vw_table_stats tbls
+      ON tbls.oid = (ei.schname || '.' || ei.objname)::regclass::oid
+    WHERE tbls."MissingStats" = true;
+
+    -- Rule L: Dead Tuples / Autovacuum Overdue (MEDIUM / VACUUM)
+    INSERT INTO tmp_recommendations
+    SELECT 'MEDIUM', 'VACUUM',
+        'Table ' || tbls."Sname" || '.' || tbls.relname ||
+        ' has ' || tbls."Dtup" || ' dead tuples and autovacuum is overdue',
+        'Run: VACUUM ' || tbls."Sname" || '.' || tbls.relname ||
+        '; Dead tuples waste space and slow scans.',
+        'Autovacuum threshold: ' || tbls.av_threshold
+    FROM planstats.extract_info(v_json, 'Relation Name') ei
+    JOIN planstats.vw_table_stats tbls
+      ON tbls.oid = (ei.schname || '.' || ei.objname)::regclass::oid
+    WHERE tbls.expect_av = 'Due To Run';
+
+    -- Rule M: Low Column Correlation with Index Scan (LOW / INDEX)
+    INSERT INTO tmp_recommendations
+    SELECT DISTINCT 'LOW', 'INDEX',
+        'Column ' || cols."CName" || ' on ' || cols."TName" ||
+        ' has low correlation (' || cols."Cluster" || '), used in Index Scan',
+        'Low correlation means random I/O during index scans. Consider CLUSTER on this index, or a BRIN index if data has natural ordering.',
+        NULL
+    FROM planstats.extract_all_nodes(v_json) n
+    JOIN planstats.extract_info(v_json, 'Relation Name') ei ON true
+    JOIN planstats.vw_column_stats cols
+      ON cols.oid = (ei.schname || '.' || ei.objname)::regclass::oid
+    WHERE n.node->>'Node Type' IN ('Index Scan', 'Index Only Scan')
+      AND n.node->>'Relation Name' = ei.objname
+      AND ABS(cols."Cluster") < 0.1
+      AND cols."Cluster" IS NOT NULL
+      AND (COALESCE(n.node->>'Index Cond', '') || COALESCE(n.node->>'Filter', '')) ~* cols."CName";
+
+    -- Rule N: Temp File Usage from pg_stat_statements (MEDIUM / CONFIGURATION)
+    IF v_queryid IS NOT NULL AND EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements') THEN
+        EXECUTE format(
+            'INSERT INTO tmp_recommendations
+             SELECT ''MEDIUM'', ''CONFIGURATION'',
+                 ''Query wrote '' || temp_blks_written || '' temp blocks to disk'',
+                 ''Increase work_mem to reduce temp file usage. Temp files cause significant I/O overhead.'',
+                 ''Temp blocks read: '' || temp_blks_read
+             FROM pg_stat_statements
+             WHERE queryid = %s AND temp_blks_written > 0',
+            v_queryid
+        );
+    END IF;
+
+    RETURN QUERY SELECT t.severity, t.category, t.finding, t.recommendation, t.details
+    FROM tmp_recommendations t;
+END;
+$_X$;
 
 
 CREATE FUNCTION planstats.extract_info(jsonb, text) RETURNS TABLE(objname text, schname text)
@@ -69,10 +325,11 @@ where plan1 ? $2
 $_$;
 
 
-CREATE FUNCTION planstats.run_plan_analyze(text, OUT planid integer, OUT queryid bigint) RETURNS record
+CREATE OR REPLACE FUNCTION planstats.run_plan_analyze(text, OUT planid integer, OUT queryid bigint) RETURNS record
     LANGUAGE plpgsql SECURITY DEFINER
     SET "pg_stat_statements.track" TO 'all'
     SET "pg_stat_statements.track_planning" TO 'on'
+    SET compute_query_id = 'on'
     AS $_X$
 declare 
 var1 text := '';
@@ -97,10 +354,11 @@ end;
 $_X$;
 
 
-CREATE FUNCTION planstats.run_plan_explain(text, OUT planid integer, OUT queryid bigint) RETURNS record
+CREATE OR REPLACE FUNCTION planstats.run_plan_explain(text, OUT planid integer, OUT queryid bigint) RETURNS record
     LANGUAGE plpgsql SECURITY DEFINER
     SET "pg_stat_statements.track_planning" TO 'on'
     SET client_min_messages TO 'warning'
+    SET compute_query_id = 'on'
     AS $_$
 declare 
 var1 text := '';
@@ -109,7 +367,7 @@ i text;
 
 begin
 
-IF current_setting('server_version')::real::int >= 16 THEN
+IF split_part(current_setting('server_version'),' ',1)::real::int >= 16 THEN
 
 FOR i in EXECUTE FORMAT($DYNAMIC$EXPLAIN (COSTS, VERBOSE, SETTINGS, GENERIC_PLAN) 
 %s$DYNAMIC$,$1) 

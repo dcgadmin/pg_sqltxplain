@@ -34,14 +34,15 @@ select 'dalibo' || '_' || abs((:'queryid')::bigint) || '.html' as htmlfile
 \qecho   <meta charset="UTF-8">
 \qecho   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 \qecho   <title>PostgreSQL Query Plan Viewer - Dalibo</title>
-\qecho   <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js"></script>
-\qecho   <script src="https://unpkg.com/pev2/dist/pev2.umd.js"></script>
+\qecho   <script src="https://unpkg.com/vue@3.5.29/dist/vue.global.prod.js"></script>
+\qecho   <script src="https://unpkg.com/pev2@1.20.2/dist/pev2.umd.js"></script>
 \qecho   <link href="https://unpkg.com/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
-\qecho   <link rel="stylesheet" href="https://unpkg.com/pev2/dist/style.css"/>
+\qecho   <link rel="stylesheet" href="https://unpkg.com/pev2@1.20.2/dist/pev2.css"/>
+\qecho   <style>html,body{height:100%;margin:0;overflow:hidden}#app{height:100%;display:flex;flex-direction:column}#app .pev2{flex:1;min-height:0}</style>
 \qecho </head>
 \qecho <body>
-\qecho   <div id="app" class="container-fluid mt-auto">
-\qecho     <pev2 :plan-source="plan" :plan-query="query"  />
+\qecho   <div id="app" class="container-fluid p-0" style="height:100%">
+\qecho     <pev2 :plan-source="plan" :plan-query="query" style="height:100%" />
 \qecho   </div>
 \qecho 
 \qecho   <script>

@@ -2,7 +2,7 @@
 
 Analyzing execution plans is made easier with curating execution plan, statistics of database objects such as tables, indexes, or columns involved in the actual runtime execution plan, all within a single report. This makes it easier to share among team members or external forum and reduces the need for additional information requests.
 
-This tool automates the curation of object statistics when analyzing problematic execution plans in PostgreSQL using an HTML template embded in sql file and the `psql` command line.
+This tool automates the curation of object statistics when analyzing problematic execution plans in PostgreSQL using an HTML template embded in sql file and the `psql` command line. It also includes an **Expert Recommendations** engine that automatically analyzes the execution plan and cross-references table/index/column statistics to produce prioritized, actionable tuning advice.
 
 ### How it Works?
 Execution plan is generated either by `Explain Analyze Buffers` or only with `Explain` and stored in a plantable.
@@ -86,6 +86,32 @@ Using -v option of `psql`, we can pass `queryid` filters along with `pg_stat_sta
 ```bash
 PGPASSWORD=********* psql -h <<PostgresHost>> -U <<PGuser>> -d <<Databases>>  -q -v ON_ERROR_STOP=1 -v query_id=8192079375982646892 -v pg_stat_statements= -f pg_sqltxplain.sql
 ```
+
+### Expert Recommendations
+The report includes an **Expert Recommendations** section that automatically analyzes the execution plan JSON and cross-references database object statistics to surface actionable tuning advice. Recommendations are categorized by severity (HIGH, MEDIUM, LOW) and type (INDEX, STATISTICS, VACUUM, CONFIGURATION, QUERY).
+
+The following checks are performed:
+
+| Severity | Category | Rule |
+|----------|----------|------|
+| HIGH | INDEX | Rows removed by filter far exceeding rows returned |
+| HIGH | INDEX | Sequential scan on large table with filter condition |
+| HIGH | CONFIGURATION | Sort operation spilling to disk |
+| HIGH | STATISTICS | Table with missing column statistics |
+| MEDIUM | CONFIGURATION | Hash join using multiple batches |
+| MEDIUM | STATISTICS | Planner row estimate errors exceeding 10x |
+| MEDIUM | VACUUM | Index Only Scan with high heap fetches |
+| MEDIUM | CONFIGURATION | Lossy bitmap heap scan |
+| MEDIUM | VACUUM | Table bloat exceeding 20% |
+| MEDIUM | VACUUM | Dead tuples with autovacuum overdue |
+| MEDIUM | CONFIGURATION | Temp file usage from pg_stat_statements |
+| LOW | QUERY | Nested loop processing large number of rows |
+| LOW | CONFIGURATION | Large sequential scan without parallel workers |
+| LOW | INDEX | Low column correlation used in index scan |
+
+The engine handles both `EXPLAIN ANALYZE` plans (with actual runtime metrics) and `EXPLAIN`-only plans (estimates only) gracefully, skipping runtime-only checks when actual metrics are not available.
+
+When no issues are detected, a green "No recommendations" message is displayed.
 
 ### Integrations with `Pev2 Visualiser`
 Integrate Execution plan objects statistics with [PEV2 visualiser](https://github.com/dalibo/pev2) a graphical vizualization of a PostgreSQL execution plan.
