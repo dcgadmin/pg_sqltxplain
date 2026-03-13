@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="PSQL">
+<title>PostgreSQL-pg_sqltxplain</title>
+<style type="text/css">
+:root {
+--bg-primary: #f5f5f7;
+--bg-secondary: #ffffff;
+--bg-tertiary: #e8e8ed;
+--text-primary: #1d1d1f;
+--text-secondary: #6e6e73;
+--text-heading: #1d1d1f;
+--link-color: #0066cc;
+--link-hover: #0055aa;
+--border-color: #d2d2d7;
+--border-light: #e8e8ed;
+--table-header-bg: #e8e8ed;
+--table-header-text: #1d1d1f;
+--table-row-alt: #fafafa;
+--table-row-bg: #ffffff;
+--pre-bg: #1e1e1e;
+--pre-text: #d4d4d4;
+--window-bar-bg: #e8e8ed;
+--window-bar-border: #d2d2d7;
+--card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+--card-shadow-hover: 0 2px 8px rgba(0,0,0,0.12);
+--nav-bg: #f0f0f5;
+--badge-cat-bg: #607d8b;
+--rec-high-bg: #fff0f0;
+--rec-high-border: #cc0000;
+--rec-medium-bg: #fff8f0;
+--rec-medium-border: #ff9800;
+--rec-low-bg: #f0f7ff;
+--rec-low-border: #2196f3;
+--rec-none-bg: #f0faf0;
+--rec-none-border: #4caf50;
+--rec-none-text: #2e7d32;
+--tooltip-bg: #ffffff;
+--tooltip-border: #d2d2d7;
+--tooltip-shadow: 0 4px 12px rgba(0,0,0,0.15);
+--footer-bg: #f5f5f7;
+--section-gap: 24px;
+}
+body.dark {
+--bg-primary: #1e1e1e;
+--bg-secondary: #282828;
+--bg-tertiary: #333333;
+--text-primary: #e0e0e0;
+--text-secondary: #a0a0a0;
+--text-heading: #f0f0f0;
+--link-color: #64d2ff;
+--link-hover: #40c4ff;
+--border-color: #444444;
+--border-light: #383838;
+--table-header-bg: #333333;
+--table-header-text: #e0e0e0;
+--table-row-alt: #2a2a2a;
+--table-row-bg: #282828;
+--pre-bg: #0d0d0d;
+--pre-text: #d4d4d4;
+--window-bar-bg: #2a2a2a;
+--window-bar-border: #444444;
+--card-shadow: 0 1px 3px rgba(0,0,0,0.3);
+--card-shadow-hover: 0 2px 8px rgba(0,0,0,0.4);
+--nav-bg: #2a2a2a;
+--badge-cat-bg: #78909c;
+--rec-high-bg: #3a1a1a;
+--rec-high-border: #ff4444;
+--rec-medium-bg: #3a2e1a;
+--rec-medium-border: #ffb74d;
+--rec-low-bg: #1a2a3a;
+--rec-low-border: #64b5f6;
+--rec-none-bg: #1a3a1a;
+--rec-none-border: #66bb6a;
+--rec-none-text: #81c784;
+--tooltip-bg: #333333;
+--tooltip-border: #555555;
+--tooltip-shadow: 0 4px 12px rgba(0,0,0,0.5);
+--footer-bg: #1e1e1e;
+--section-gap: 24px;
+}
+*,*::before,*::after { box-sizing: border-box; }
+body {
+font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+font-size: 10pt;
+color: var(--text-primary);
+background: var(--bg-primary);
+margin: 0;
+padding: 0;
+line-height: 1.6;
+}
+main {
+max-width: 1200px;
+margin: 0 auto;
+padding: 0 20px 40px 20px;
+}
+h1 {
+font-size: 16pt;
+color: var(--text-heading);
+margin: 0;
+padding: 16px 0;
+text-align: center;
+border-bottom: 1px solid var(--border-color);
+}
+h2 {
+font-size: 12pt;
+color: var(--text-heading);
+margin: var(--section-gap) 0 8px 0;
+padding: 0;
+}
+h4 {
+font-size: 9pt;
+color: var(--text-secondary);
+font-weight: normal;
+margin: 4px 0 12px 0;
+}
+p {
+font-size: 10pt;
+color: var(--text-primary);
+background: transparent;
+}
+a {
+font-size: 9pt;
+color: var(--link-color);
+text-decoration: none;
+}
+a:hover { color: var(--link-hover); text-decoration: underline; }
+.xplaina {
+font-size: 10pt;
+color: var(--link-color);
+text-decoration: none;
+border-bottom: 1px dotted var(--link-color);
+}
+.xplainattension {
+font-size: 10pt;
+color: #ff3b30;
+font-weight: bold;
+text-decoration: none;
+border-bottom: 1px dotted #ff3b30;
+}
+/* Window chrome bar */
+.window-bar {
+display: flex;
+align-items: center;
+padding: 10px 16px;
+background: var(--window-bar-bg);
+border-bottom: 1px solid var(--window-bar-border);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+.dot {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+display: inline-block;
+margin-right: 8px;
+}
+.dot.red { background: #ff5f57; }
+.dot.yellow { background: #febc2e; }
+.dot.green { background: #28c840; }
+.window-title {
+flex: 1;
+text-align: center;
+font-size: 10pt;
+color: var(--text-secondary);
+font-weight: 600;
+}
+#theme-btn {
+font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+font-size: 9pt;
+padding: 4px 14px;
+border: 1px solid var(--border-color);
+border-radius: 6px;
+background: var(--bg-secondary);
+color: var(--text-primary);
+cursor: pointer;
+transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+#theme-btn:hover {
+background: var(--bg-tertiary);
+}
+/* Table of contents */
+.toc {
+background: var(--bg-secondary);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+padding: 16px 24px;
+margin: var(--section-gap) 0;
+box-shadow: var(--card-shadow);
+}
+.toc strong { color: var(--text-heading); font-size: 11pt; }
+.toc ol { padding-left: 20px; margin: 8px 0 0 0; }
+.toc li { margin: 4px 0; list-style-type: decimal; }
+.toc a { font-size: 9pt; }
+/* Tables - psql HTML output */
+section { overflow-x: auto; }
+table {
+width: auto;
+border-collapse: collapse;
+font-size: 9pt;
+background: var(--bg-secondary);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+overflow: hidden;
+box-shadow: var(--card-shadow);
+margin: 8px 0;
+}
+th {
+background: var(--table-header-bg);
+color: var(--table-header-text);
+font-weight: 600;
+font-size: 9pt;
+padding: 10px 12px;
+text-align: left;
+white-space: nowrap;
+border-bottom: 2px solid var(--border-color);
+}
+td {
+padding: 8px 12px;
+border-bottom: 1px solid var(--border-light);
+color: var(--text-primary);
+background: var(--table-row-bg);
+white-space: nowrap;
+}
+tr:nth-child(even) td { background: var(--table-row-alt); }
+tr:hover td { background: var(--bg-tertiary); }
+/* Pre blocks for execution plan */
+pre {
+background: var(--pre-bg);
+color: var(--pre-text);
+padding: 16px;
+border-radius: 8px;
+overflow-x: auto;
+font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+font-size: 9pt;
+line-height: 1.5;
+border: 1px solid var(--border-color);
+box-shadow: var(--card-shadow);
+}
+pre a, pre .xplaina { color: #64d2ff; border-bottom-color: #64d2ff; }
+pre .xplainattension { color: #ff6b6b; border-bottom-color: #ff6b6b; }
+/* Tooltip styles */
+.tooltip-container {
+position: relative;
+display: inline;
+cursor: pointer;
+}
+.tooltip-content {
+visibility: hidden;
+position: absolute;
+left: 100%;
+top: 50%;
+transform: translateY(-50%);
+background-color: var(--tooltip-bg);
+border: 1px solid var(--tooltip-border);
+padding: 12px;
+border-radius: 8px;
+white-space: nowrap;
+opacity: 0;
+transition: opacity 0.2s, visibility 0.2s;
+z-index: 1000;
+box-shadow: var(--tooltip-shadow);
+max-width: 600px;
+overflow-x: auto;
+}
+.tooltip-container:hover .tooltip-content {
+visibility: visible;
+opacity: 1;
+}
+.tooltip-table {
+border-collapse: collapse;
+font-size: 8pt;
+box-shadow: none;
+border: none;
+margin: 0;
+}
+.tooltip-table th {
+background-color: var(--table-header-bg);
+color: var(--table-header-text);
+font-size: 8pt;
+padding: 4px 8px;
+}
+.tooltip-table td {
+border: 1px solid var(--border-light);
+padding: 4px 8px;
+font-size: 8pt;
+}
+/* Section navigation */
+.section-nav {
+display: flex;
+gap: 12px;
+padding: 6px 12px;
+background: var(--nav-bg);
+border-radius: 6px;
+margin: 8px 0;
+font-size: 9pt;
+list-style: none;
+}
+.section-nav a { font-size: 9pt; }
+/* Recommendations */
+.recommendations-section { margin: 12px 0; }
+.rec-high {
+background-color: var(--rec-high-bg);
+border-left: 4px solid var(--rec-high-border);
+padding: 10px 14px;
+margin: 8px 0;
+border-radius: 0 6px 6px 0;
+}
+.rec-medium {
+background-color: var(--rec-medium-bg);
+border-left: 4px solid var(--rec-medium-border);
+padding: 10px 14px;
+margin: 8px 0;
+border-radius: 0 6px 6px 0;
+}
+.rec-low {
+background-color: var(--rec-low-bg);
+border-left: 4px solid var(--rec-low-border);
+padding: 10px 14px;
+margin: 8px 0;
+border-radius: 0 6px 6px 0;
+}
+.rec-title { font-weight: bold; font-size: 10pt; color: var(--text-primary); }
+.rec-detail { font-size: 9pt; color: var(--text-secondary); margin-top: 4px; }
+.rec-action { font-size: 9pt; color: var(--link-color); margin-top: 4px; font-style: italic; }
+.rec-badge {
+display: inline-block;
+padding: 2px 8px;
+border-radius: 4px;
+font-size: 8pt;
+font-weight: bold;
+color: white;
+margin-right: 6px;
+}
+.badge-high { background-color: #cc0000; }
+.badge-medium { background-color: #ff9800; }
+.badge-low { background-color: #2196f3; }
+.rec-none {
+padding: 14px;
+background-color: var(--rec-none-bg);
+border-left: 4px solid var(--rec-none-border);
+font-size: 10pt;
+color: var(--rec-none-text);
+border-radius: 0 6px 6px 0;
+}
+/* Plan wrapper with maximize */
+.plan-wrapper {
+position: relative;
+border: 1px solid var(--border-color);
+border-radius: 8px;
+background: var(--pre-bg);
+overflow: hidden;
+margin: 12px 0;
+}
+.plan-wrapper pre {
+margin: 0;
+border: none;
+border-radius: 0;
+box-shadow: none;
+max-height: 600px;
+overflow: auto;
+}
+.plan-wrapper.fullscreen {
+position: fixed;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+z-index: 9999;
+border: none;
+border-radius: 0;
+}
+.plan-wrapper.fullscreen pre {
+max-height: 100vh;
+height: calc(100vh - 38px);
+}
+.plan-toolbar {
+display: flex;
+justify-content: flex-end;
+padding: 4px 8px;
+background: var(--window-bar-bg);
+border-bottom: 1px solid var(--border-color);
+}
+.plan-btn {
+font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+font-size: 9pt;
+padding: 4px 14px;
+border: 1px solid var(--border-color);
+border-radius: 6px;
+background: var(--bg-secondary);
+color: var(--text-primary);
+cursor: pointer;
+transition: background 0.2s;
+}
+.plan-btn:hover { background: var(--bg-tertiary); }
+/* Footer */
+footer {
+text-align: center;
+font-size: 9pt;
+color: var(--text-secondary);
+padding: 20px 0;
+margin-top: 40px;
+border-top: 1px solid var(--border-color);
+background: var(--footer-bg);
+}
+footer a { color: var(--link-color); }
+/* Section cards */
+section {
+background: var(--bg-secondary);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+padding: 16px 20px;
+margin: var(--section-gap) 0;
+box-shadow: var(--card-shadow);
+}
+section table { box-shadow: none; }
+/* Anchor fix for sticky header */
+.anchor { scroll-margin-top: 60px; }
+</style>
+<script>function toggleTheme(){var b=document.body;var t=document.getElementById("theme-btn");if(b.classList.contains("dark")){b.classList.remove("dark");t.textContent="Night Mode";}else{b.classList.add("dark");t.textContent="Day Mode";}}</script>
+<script>function togglePlanFullscreen(){var w=document.getElementById("plan-wrap");var b=document.getElementById("plan-btn");if(w.classList.contains("fullscreen")){w.classList.remove("fullscreen");b.textContent="Full Screen";document.body.style.overflow="";}else{w.classList.add("fullscreen");b.textContent="Exit Full Screen";document.body.style.overflow="hidden";}}</script>
+</head>
+<body>
+<div class="window-bar">
+<span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+<span class="window-title">pg_sqltxplain</span>
+<button id="theme-btn" onclick="toggleTheme()">Night Mode</button>
+</div>
+<main>
+<header data-section="report-header">
+<h1>pg_sqltxplain Report - QueryID = 5024459431600252383</h1>
+</header>
+<nav data-section="toc" class="toc">
+<strong>Contents</strong>
+<ol>
+<li><a href="#Overview">Overview</a></li>
+<li><a href="#QueryDetails">Query and Execution Plan Details</a></li>
+<li><a href="#Recommendations">Expert Recommendations</a></li>
+<li><a href="#Databaseobjects">Database Objects Statistics</a>
+<ol>
+<li><a href="#Databaseobjects1">Query Performance Stats</a></li>
+<li><a href="#Databaseobjects2">Table Stats</a></li>
+<li><a href="#Databaseobjects3">Index Stats</a></li>
+<li><a href="#Databaseobjects4">Column Stats</a></li>
+<li><a href="#Databaseobjects5">Extended Stats</a></li>
+<li><a href="#Databaseobjects6">Trigger Stats</a></li>
+<li><a href="#Databaseobjects7">Functions Stats</a></li>
+</ol>
+</li>
+<li><a href="#DatabaseConfDetails">Additional Database and Configuration Details</a>
+<ol>
+<li><a href="#DatabaseConfDetails1">PostgreSQL Version and Database Details</a></li>
+<li><a href="#DatabaseConfDetails2">Database Settings during Executions</a></li>
+<li><a href="#DatabaseConfDetails3">Parameter Setting other than Defaults</a></li>
+<li><a href="#DatabaseConfDetails4">Execution Plan related Configuration Settings</a></li>
+</ol>
+</li>
+</ol>
+</nav>
+<section data-section="overview" id="Overview" class="anchor">
+<h2>Overview</h2>
+<h4>pg_sqltxplain script gathers stats for all database objects involved in the execution plan for a query.</h4>
+ Report Creation Time : <b>2026-03-08 21:10:48</b>
+
+</section>
+<section data-section="sql-query" id="QueryDetails" class="anchor">
+<h2>Query and Execution Plan Details</h2>
+<h4>This section shows SQL details along with the underlying execution plan.</h4>
+<nav class="section-nav"><a href="#Overview">Previous</a> <a href="#report-header">Top</a> <a href="#Recommendations">Next</a></nav>
+<h2>SQL</h2>
+<pre>SELECT r.rental_id, c.full_name
+FROM rental r
+JOIN customer c ON r.customer_id = c.customer_id
+WHERE c.activebool = false
+  AND r.store_id = 1 </pre>
+</section>
+<section data-section="execution-plan" id="ExecutionPlanDetailsAnchor" class="anchor">
+<h2>Execution Plan</h2>
+<div id="plan-wrap" class="plan-wrapper">
+<div class="plan-toolbar">
+<button id="plan-btn" class="plan-btn" onclick="togglePlanFullscreen()">Full Screen</button>
+</div>
+<pre>
+Gather  (cost=5525.86..20434.17 rows=736 width=26) (actual time=38.674..52.898 rows=567.00 loops=1)
+  Output: r.rental_id, c.full_name
+  Workers Planned: 2
+  Workers Launched: 2
+  Buffers: shared hit=4215
+  ->  Parallel Hash Join  (cost=4525.86..19360.57 rows=307 width=26) (actual time=24.732..31.912 rows=189.00 loops=3)
+        Output: r.rental_id, c.full_name
+        Inner Unique: true
+        Hash Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(r.customer_id<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+				  	<th>TableName</th>
+				  	<th>ColumnName</th>
+                    <th>DataType</th>
+                    <th>Nullable</th>
+				    <th>Null Fraction</th>
+				    <th>Distinct</th>
+				    <th>Correlation</th>
+				  	<th>Selectivity</th>
+					<th>Storage Type</th>
+					<th>Statistics Target</th>
+					<th>MCV (Top 5)</th>
+					<th>MVF (Top 5)</th>
+                </tr><tr><td>bluebox.rental</td><td>customer_id</td><td>integer</td><td>NOT NULL</td><td>0.00</td><td>-0.11107206</td><td>0.007</td><td>9.00</td><td>plain</td><td></td><td>N/A</td><td>N/A</td></tr></table></div></a></div> = <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">c.customer_id)<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+				  	<th>TableName</th>
+				  	<th>ColumnName</th>
+                    <th>DataType</th>
+                    <th>Nullable</th>
+				    <th>Null Fraction</th>
+				    <th>Distinct</th>
+				    <th>Correlation</th>
+				  	<th>Selectivity</th>
+					<th>Storage Type</th>
+					<th>Statistics Target</th>
+					<th>MCV (Top 5)</th>
+					<th>MVF (Top 5)</th>
+                </tr><tr><td>bluebox.rental</td><td>customer_id</td><td>integer</td><td>NOT NULL</td><td>0.00</td><td>-0.11107206</td><td>0.007</td><td>9.00</td><td>plain</td><td></td><td>N/A</td><td>N/A</td></tr></table></div></a></div>
+        Buffers: shared hit=4215
+        Worker 0:  actual time=20.432..27.593 rows=150.00 loops=1
+          Buffers: shared hit=1189
+        Worker 1:  actual time=18.476..25.656 rows=203.00 loops=1
+          Buffers: shared hit=1189
+        ->  Parallel Bitmap Heap Scan on <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects2">bluebox.rental<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+                    <th>Table_Size</th>
+					<th>MissingStats</th>
+                    <th>Index_Size</th>
+				    <th>TablePages</th>
+				    <th>LiveRows</th>
+				    <th>DeadRows</th>
+				    <th>BloatPCT%</th>
+				    <th>HOT Rate</th>
+				    <th>AV Status</th>
+				  	<th>LVacuumTime</th>
+				    <th>LAnalyzeTime</th>
+                </tr><tr><td>bluebox</td><td>rental</td><td>121 MB</td><td class="""">No</td><td>181 MB</td><td>15432</td><td>1.496785e+06</td><td>1343</td><td class="""">0%</td><td>0.00%</td><td class=""""></td><td>07-MAR-26 14:41:38</td><td>08-MAR-26 20:44:59</td></tr></table></div></a></div> r  (cost=125.07..14947.83 rows=4551 width=12) (actual time=2.865..9.127 rows=3522.00 loops=3)
+              Output: r.rental_id, r.rental_period, r.inventory_id, r.customer_id, r.last_update, r.store_id
+              Recheck Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(r.store_id<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+				  	<th>TableName</th>
+				  	<th>ColumnName</th>
+                    <th>DataType</th>
+                    <th>Nullable</th>
+				    <th>Null Fraction</th>
+				    <th>Distinct</th>
+				    <th>Correlation</th>
+				  	<th>Selectivity</th>
+					<th>Storage Type</th>
+					<th>Statistics Target</th>
+					<th>MCV (Top 5)</th>
+					<th>MVF (Top 5)</th>
+                </tr><tr><td>bluebox.rental</td><td>store_id</td><td>integer</td><td>NULL</td><td>0.00</td><td>196</td><td>0.009</td><td>7636.66</td><td>plain</td><td></td><td>{125,116,16,112,100}</td><td>{0.007766667,0.0076,0.0075333333,0.0075,0.0072}</td></tr></table></div></a></div> = 1)
+              Heap Blocks: exact=216
+              Buffers: shared hit=665
+              Worker 0:  actual time=2.882..9.258 rows=2554.00 loops=1
+                Heap Blocks: exact=163
+                Buffers: shared hit=163
+              Worker 1:  actual time=2.870..8.964 rows=4467.00 loops=1
+                Heap Blocks: exact=275
+                Buffers: shared hit=275
+              ->  Bitmap Index Scan on <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects3">rental_store_id_idx<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+				    <th>IndexName</th>
+                    <th>IndexSize</th>
+                    <th>IndexScan</th>
+				    <th>LastIndexScan</th>
+				    <th>IndexEntryScan</th>
+				    <th>TableRowsFetch</th>
+				    <th>Selectivity</th>
+				  	<th>IndexDefinition</th>
+                </tr><tr><td>bluebox</td><td>rental</td><td>rental_store_id_idx</td><td>10184 kB</td><td>11</td><td>08-MAR-26 18:42:24</td><td>115438</td><td>0</td><td>0.000</td><td>btree (store_id)</td></tr></table></div></a></div>  (cost=0.00..122.34 rows=10922 width=0) (actual time=2.741..2.741 rows=10570.00 loops=1)
+                    Index Cond: <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">(r.store_id<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+				  	<th>TableName</th>
+				  	<th>ColumnName</th>
+                    <th>DataType</th>
+                    <th>Nullable</th>
+				    <th>Null Fraction</th>
+				    <th>Distinct</th>
+				    <th>Correlation</th>
+				  	<th>Selectivity</th>
+					<th>Storage Type</th>
+					<th>Statistics Target</th>
+					<th>MCV (Top 5)</th>
+					<th>MVF (Top 5)</th>
+                </tr><tr><td>bluebox.rental</td><td>store_id</td><td>integer</td><td>NULL</td><td>0.00</td><td>196</td><td>0.009</td><td>7636.66</td><td>plain</td><td></td><td>{125,116,16,112,100}</td><td>{0.007766667,0.0076,0.0075333333,0.0075,0.0072}</td></tr></table></div></a></div> = 1)
+                    Index Searches: 1
+                    Buffers: shared hit=11
+        ->  Parallel Hash  (cost=4334.72..4334.72 rows=5286 width=26) (actual time=21.686..21.686 rows=5234.00 loops=3)
+              Output: c.full_name, c.customer_id
+              Buckets: 16384  Batches: 1  Memory Usage: 1120kB
+              Buffers: shared hit=3550
+              Worker 0:  actual time=17.489..17.490 rows=5151.00 loops=1
+                Buffers: shared hit=1026
+              Worker 1:  actual time=15.480..15.480 rows=4681.00 loops=1
+                Buffers: shared hit=914
+              ->  Parallel Seq Scan on <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects2">bluebox.customer<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+                    <th>SchemaName</th>
+                    <th>TableName</th>
+                    <th>Table_Size</th>
+					<th>MissingStats</th>
+                    <th>Index_Size</th>
+				    <th>TablePages</th>
+				    <th>LiveRows</th>
+				    <th>DeadRows</th>
+				    <th>BloatPCT%</th>
+				    <th>HOT Rate</th>
+				    <th>AV Status</th>
+				  	<th>LVacuumTime</th>
+				    <th>LAnalyzeTime</th>
+                </tr><tr><td>bluebox</td><td>customer</td><td>28 MB</td><td class="""">No</td><td>6160 kB</td><td>3520</td><td>186740</td><td>3294</td><td class="""">4%</td><td>1.76%</td><td class=""""></td><td>07-MAR-26 14:41:34</td><td>07-MAR-26 18:00:13</td></tr></table></div></a></div> c  (cost=0.00..4334.72 rows=5286 width=26) (actual time=0.045..19.761 rows=5234.00 loops=3)
+                    Output: c.full_name, c.customer_id
+                    Filter: (NOT <div class="tooltip-container"><a class ="xplaina" href="#Databaseobjects4">c.activebool)<div class="tooltip-content"><table class="tooltip-table">
+				  <tr>
+				  	<th>TableName</th>
+				  	<th>ColumnName</th>
+                    <th>DataType</th>
+                    <th>Nullable</th>
+				    <th>Null Fraction</th>
+				    <th>Distinct</th>
+				    <th>Correlation</th>
+				  	<th>Selectivity</th>
+					<th>Storage Type</th>
+					<th>Statistics Target</th>
+					<th>MCV (Top 5)</th>
+					<th>MVF (Top 5)</th>
+                </tr><tr><td>bluebox.customer</td><td>activebool</td><td>boolean</td><td>NOT NULL</td><td>0.00</td><td>2</td><td>0.693</td><td>93370.00</td><td>plain</td><td></td><td>{t,f}</td><td>{0.93263334,0.06736667}</td></tr></table></div></a></div>
+                    Rows Removed by Filter: <div class="tooltip-container"><span class="xplaina">57013<div class="tooltip-content"><table class="tooltip-table">
+	<tr><th>Metric</th><th>Value</th></tr>
+	<tr><td>Node Type</td><td>Seq Scan</td></tr>
+	<tr><td>Table</td><td>customer</td></tr>
+	<tr><td>Plan Rows</td><td>5286</td></tr>
+	<tr><td>Actual Rows</td><td>N/A</td></tr>
+	<tr><td>Rows Removed</td><td>57013</td></tr>
+	<tr><td>Filter Effectiveness</td><td>N/A</td></tr>
+	<tr><td>Filter</td><td>(NOT c.activebool)</td></tr>
+	</table></div></span></div>
+                    Buffers: shared hit=3550
+                    Worker 0:  actual time=0.037..15.707 rows=5151.00 loops=1
+                      Buffers: shared hit=1026
+                    Worker 1:  actual time=0.031..13.588 rows=4681.00 loops=1
+                      Buffers: shared hit=914
+Query Identifier: 5024459431600252383
+Planning:
+  Buffers: shared hit=458
+Planning Time: 6.016 ms
+Execution Time: 53.106 ms
+</pre>
+</div>
+</section>
+<section data-section="recommendations" id="Recommendations" class="anchor">
+<h2>Expert Recommendations</h2>
+<h4>Automated analysis of the execution plan with actionable tuning advice.</h4>
+<nav class="section-nav"><a href="#QueryDetails">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects1">Next</a></nav>
+<div class="recommendations-section">
+<div class="rec-none">No recommendations found. The execution plan looks efficient.</div>
+</div>
+</section>
+<section data-section="performance-stats" id="Databaseobjects" class="anchor">
+<h2>Query and Object Statistics</h2>
+<h4>This section shows underlying statistics of objects involved in the execution plan of the SQL.</h4>
+<div id="Databaseobjects1" class="anchor"></div>
+<h2>Performance Metrics - pg_stat_statements</h2>
+<nav class="section-nav"><a href="#Recommendations">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects2">Next</a></nav>
+<h4>This section shows the underlying runtime execution stats of SQL.</h4>
+<table border="1">
+  <tr>
+    <th align="center">QueryID</th>
+    <th align="center">Mean_Planning_Time</th>
+    <th align="center">Mean_Execution_Time</th>
+    <th align="center">Standard_Deviation_Exec_Time</th>
+    <th align="center">Row_Per_Exec</th>
+    <th align="center">Calls</th>
+    <th align="center">Plan Count</th>
+    <th align="center">Disk IO per Call</th>
+    <th align="center">Buffer IO per Call</th>
+    <th align="center">Disk Temp Usage</th>
+  </tr>
+  <tr valign="top">
+    <td align="right">5024459431600252383</td>
+    <td align="right">3.80</td>
+    <td align="right">133.25</td>
+    <td align="right">223.93</td>
+    <td align="right">1738</td>
+    <td align="right">14</td>
+    <td align="right">4</td>
+    <td align="right">0</td>
+    <td align="right">11429</td>
+    <td align="right">0</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="table-stats" id="Databaseobjects2" class="anchor">
+<h2>Database Table Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects1">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects3">Next</a></nav>
+<h4>This section shows the underlying stats of the table referenced in the execution plan.</h4>
+<table border="1">
+  <tr>
+    <th align="center">SchemaName</th>
+    <th align="center">TableName</th>
+    <th align="center">Table_Size</th>
+    <th align="center">Index_Size</th>
+    <th align="center">TablePages</th>
+    <th align="center">LiveRows</th>
+    <th align="center">DeadRows</th>
+    <th align="center">MissingStats</th>
+    <th align="center">Partition?</th>
+    <th align="center">BloatPerc</th>
+    <th align="center">HOT rate</th>
+    <th align="center">LVacuumTime</th>
+    <th align="center">LAnalyzeTime</th>
+    <th align="center">AVThres</th>
+    <th align="center">AVSclFactor</th>
+    <th align="center">AVThreshold</th>
+    <th align="center">Expect_AV</th>
+    <th align="center">Pub?</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">bluebox</td>
+    <td align="left">customer</td>
+    <td align="left">28 MB</td>
+    <td align="left">6160 kB</td>
+    <td align="right">3520</td>
+    <td align="right">186740</td>
+    <td align="right">3294</td>
+    <td align="left">f</td>
+    <td align="left">N</td>
+    <td align="right">4</td>
+    <td align="right">1.76</td>
+    <td align="left">07-MAR-26 14:41:34</td>
+    <td align="left">07-MAR-26 18:00:13</td>
+    <td align="left">50</td>
+    <td align="left">0.2</td>
+    <td align="left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;37,398</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">N</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">bluebox</td>
+    <td align="left">rental</td>
+    <td align="left">121 MB</td>
+    <td align="left">181 MB</td>
+    <td align="right">15432</td>
+    <td align="right">1.496785e+06</td>
+    <td align="right">1343</td>
+    <td align="left">f</td>
+    <td align="left">N</td>
+    <td align="right">0</td>
+    <td align="right">0.00</td>
+    <td align="left">07-MAR-26 14:41:38</td>
+    <td align="left">08-MAR-26 20:44:59</td>
+    <td align="left">50</td>
+    <td align="left">0.2</td>
+    <td align="left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;299,407</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">N</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="index-stats" id="Databaseobjects3" class="anchor">
+<h2>Database Index Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects2">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects4">Next</a></nav>
+<h4>This section shows the underlying stats of the index referenced in the execution plan.</h4>
+<table border="1">
+  <tr>
+    <th align="center">SchemaName</th>
+    <th align="center">TableName</th>
+    <th align="center">IndexName</th>
+    <th align="center">IndexSize</th>
+    <th align="center">IndexScan</th>
+    <th align="center">LastIndexScan</th>
+    <th align="center">IndexEntryScan</th>
+    <th align="center">TableRowsFetch</th>
+    <th align="center">IndexDef</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">bluebox</td>
+    <td align="left">rental</td>
+    <td align="left">rental_store_id_idx</td>
+    <td align="left">10184 kB</td>
+    <td align="right">11</td>
+    <td align="left">08-MAR-26 18:42:24</td>
+    <td align="right">115438</td>
+    <td align="right">0</td>
+    <td align="left">btree (store_id)</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="column-stats" id="Databaseobjects4" class="anchor">
+<h2>Execution Plan Columns Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects3">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects5">Next</a></nav>
+<h4>This section shows the underlying stats of the column referenced in the execution plan.</h4>
+<table border="1">
+  <tr>
+    <th align="center">SchemaName</th>
+    <th align="center">TableName</th>
+    <th align="center">ColumnName</th>
+    <th align="center">DataType</th>
+    <th align="center">Nullable</th>
+    <th align="center">Null Fraction</th>
+    <th align="center">Distinct</th>
+    <th align="center">Correlation</th>
+    <th align="center">Selectivity</th>
+    <th align="center">Storage Type</th>
+    <th align="center">Compression</th>
+    <th align="center">Statistics Target</th>
+    <th align="center">Most Common Val(5)</th>
+    <th align="center">Most Common Freq(5)</th>
+  </tr>
+</table>
+
+</section>
+<section data-section="extended-stats" id="Databaseobjects5" class="anchor">
+<h2>Execution Plan Extended Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects4">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects6">Next</a></nav>
+<h4>This section shows the underlying extended stats of the Table referenced in the execution plan.</h4>
+<table border="1">
+  <tr>
+    <th align="center">Schema</th>
+    <th align="center">TableName</th>
+    <th align="center">Statistics Name</th>
+    <th align="center">columns</th>
+    <th align="center">NDistinct</th>
+    <th align="center">Dependency</th>
+    <th align="center">MCV</th>
+    <th align="center">Statistics Target</th>
+  </tr>
+</table>
+
+</section>
+<section data-section="trigger-stats" id="Databaseobjects6" class="anchor">
+<h2>Execution Plan Trigger Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects5">Previous</a> <a href="#report-header">Top</a> <a href="#Databaseobjects7">Next</a></nav>
+<h4>This section shows the underlying details of triggers referenced in the execution plan, if any.</h4>
+<table border="1">
+  <tr>
+    <th align="center">triggername</th>
+    <th align="center">Time</th>
+    <th align="center">Calls</th>
+    <th align="center">TableName</th>
+    <th align="center">ProcedureName</th>
+    <th align="center">TriggerDef</th>
+  </tr>
+</table>
+
+</section>
+<section data-section="function-stats" id="Databaseobjects7" class="anchor">
+<h2>Execution Plan Function Stats Summary</h2>
+<nav class="section-nav"><a href="#Databaseobjects6">Previous</a> <a href="#report-header">Top</a> <a href="#DatabaseConfDetails">Next</a></nav>
+<h4>This section shows the underlying details of functions referenced in the execution plan, but only if the <i>track_functions</i> flag is set.</h4>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">funcname</th>
+    <th align="center">calls</th>
+    <th align="center">total_time</th>
+    <th align="center">self_time</th>
+    <th align="center">Type</th>
+    <th align="center">Volatility</th>
+    <th align="center">Parallel</th>
+    <th align="center">Language</th>
+    <th align="center">Filter</th>
+  </tr>
+</table>
+
+</section>
+<section data-section="db-details" id="DatabaseConfDetails" class="anchor">
+<h2>Additional Configuration and Database Details</h2>
+<h4>This section shows additional database details along with must-know configurations for execution plan analysis.</h4>
+<nav class="section-nav"><a href="#Databaseobjects7">Previous</a> <a href="#report-header">Top</a> <a href="#DatabaseConfDetails2">Next</a></nav>
+<div id="DatabaseConfDetails1" class="anchor"></div>
+<h2>PostgreSQL Version and Database Details</h2>
+<table border="1">
+  <tr>
+    <th align="center">Database Name</th>
+    <th align="center">version</th>
+    <th align="center">Size</th>
+    <th align="center">Hit Ratio</th>
+    <th align="center">xact_commit_ratio</th>
+    <th align="center">xact_rollback_ratio</th>
+    <th align="center">deadlocks</th>
+    <th align="center">conflicts</th>
+    <th align="center">Temp Files</th>
+    <th align="center">Total Temp</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">bluebox</td>
+    <td align="left">PostgreSQL 18.2</td>
+    <td align="left">1037 MB</td>
+    <td align="right">99</td>
+    <td align="right">99</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">96</td>
+    <td align="left">320 MB</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="execution-settings" id="DatabaseConfDetails2" class="anchor">
+<h2>Database Settings During Execution</h2>
+<nav class="section-nav"><a href="#DatabaseConfDetails1">Previous</a> <a href="#report-header">Top</a> <a href="#DatabaseConfDetails3">Next</a></nav>
+<table border="1">
+  <tr>
+    <th align="center">Execution Plan Setting</th>
+    <th align="center">Value</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">effective_cache_size</td>
+    <td align="left">6GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">search_path</td>
+    <td align="left">bluebox, public</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">work_mem</td>
+    <td align="left">8MB</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="non-default-settings" id="DatabaseConfDetails3" class="anchor">
+<h2>Database Parameter Settings Other Than Defaults</h2>
+<nav class="section-nav"><a href="#DatabaseConfDetails2">Previous</a> <a href="#report-header">Top</a> <a href="#DatabaseConfDetails4">Next</a></nav>
+<table border="1">
+  <tr>
+    <th align="center">Parameter</th>
+    <th align="center">Value</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">application_name</td>
+    <td align="left">psql</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_analyze</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_buffers</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_format</td>
+    <td align="left">json</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_min_duration</td>
+    <td align="left">500ms</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_nested_statements</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_triggers</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">auto_explain.log_verbose</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">checkpoint_timeout</td>
+    <td align="left">15min</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">client_encoding</td>
+    <td align="left">UTF8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">default_text_search_config</td>
+    <td align="left">pg_catalog.english</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">effective_cache_size</td>
+    <td align="left">6GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">lc_messages</td>
+    <td align="left">en_US.utf8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">lc_monetary</td>
+    <td align="left">en_US.utf8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">lc_numeric</td>
+    <td align="left">en_US.utf8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">lc_time</td>
+    <td align="left">en_US.utf8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">listen_addresses</td>
+    <td align="left">*</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_timezone</td>
+    <td align="left">Etc/UTC</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">maintenance_work_mem</td>
+    <td align="left">1GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_wal_size</td>
+    <td align="left">4GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">min_wal_size</td>
+    <td align="left">1GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pg_stat_statements.track</td>
+    <td align="left">all</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">search_path</td>
+    <td align="left">planstats, public</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">shared_buffers</td>
+    <td align="left">2GB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">shared_preload_libraries</td>
+    <td align="left">pg_stat_statements,auto_explain,pg_cron</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">TimeZone</td>
+    <td align="left">Etc/UTC</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">work_mem</td>
+    <td align="left">8MB</td>
+  </tr>
+</table>
+
+</section>
+<section data-section="plan-config-settings" id="DatabaseConfDetails4" class="anchor">
+<h2>Important Configuration Settings for Execution Plan</h2>
+<nav class="section-nav"><a href="#DatabaseConfDetails3">Previous</a> <a href="#report-header">Top</a></nav>
+<table border="1">
+  <tr>
+    <th align="center">Parameter</th>
+    <th align="center">Value</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">default_statistics_target</td>
+    <td align="left">100</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">from_collapse_limit</td>
+    <td align="left">8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">hash_mem_multiplier</td>
+    <td align="left">2</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">join_collapse_limit</td>
+    <td align="left">8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_parallel_workers</td>
+    <td align="left">8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_parallel_workers_per_gather</td>
+    <td align="left">2</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">min_parallel_table_scan_size</td>
+    <td align="left">8MB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">plan_cache_mode</td>
+    <td align="left">auto</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">random_page_cost</td>
+    <td align="left">4</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">seq_page_cost</td>
+    <td align="left">1</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">temp_buffers</td>
+    <td align="left">8MB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">work_mem</td>
+    <td align="left">8MB</td>
+  </tr>
+</table>
+
+</section>
+<footer>
+Created by DataCloudGaze Consulting<br>
+<a href="mailto:contact@datacloudgaze.com">Report Issue - contact@datacloudgaze.com</a><br>
+<a href="https://www.datacloudgaze.com/">About Us</a>
+</footer>
+</main>
+</body>
+</html>
